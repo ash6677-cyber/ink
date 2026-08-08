@@ -166,18 +166,21 @@ const labelsAfterMerge = await page.evaluate(async () => {
     req.onerror = () => rej(req.error)
   })
   db.close()
+  // Sorted by title: IndexedDB's getAll order is not deterministic, and the
+  // check compares JSON — key order must not be what fails it.
   return Object.fromEntries(
     scenes
       .filter((s) => s.title !== undefined)
-      .map((s) => [s.title, [...s.labels].sort()]),
+      .map((s) => [s.title, [...s.labels].sort()])
+      .sort((a, b) => a[0].localeCompare(b[0])),
   )
 })
 check(
   'the merge updated every scene carrying either label',
   {
     'Harbour Morning': ['crossing', 'storm'],
-    'The Long Walk': ['crossing'],
     'Last Light': ['crossing'],
+    'The Long Walk': ['crossing'],
   },
   labelsAfterMerge,
   'the scene that carried both has exactly one copy',
