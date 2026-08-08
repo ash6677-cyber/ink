@@ -7,6 +7,8 @@ import {
   Maximize2,
   Search,
   SunMoon,
+  TextQuote,
+  UserRound,
 } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useEffect, useMemo, useState } from 'react'
@@ -17,7 +19,9 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { VisuallyHidden } from '@/components/common/visually-hidden'
 import { ENTRY_TYPE_ICON } from '@/features/codex/lib/entry-type'
+import { searchProse } from '@/lib/search/prose-search'
 import { matchesShortcut } from '@/lib/shortcuts'
+import { useCardStore } from '@/stores/card-store'
 import { useCodexStore } from '@/stores/codex-store'
 import { useEditorStore } from '@/stores/editor-store'
 import { useProjectStore } from '@/stores/project-store'
@@ -25,7 +29,7 @@ import { useUiStore } from '@/stores/ui-store'
 
 interface PaletteEntry {
   id: string
-  section: 'Actions' | 'Scenes' | 'Almanac' | 'Projects' | 'Navigate'
+  section: 'Actions' | 'Scenes' | 'In the prose' | 'Almanac' | 'Characters' | 'Projects' | 'Navigate'
   label: string
   hint?: string
   icon: React.ComponentType<{ className?: string }>
@@ -38,6 +42,7 @@ export function CommandPalette() {
   const focusMode = useUiStore((s) => s.focusMode)
   const setFocusMode = useUiStore((s) => s.setFocusMode)
   const setManuscriptSearchOpen = useUiStore((s) => s.setManuscriptSearchOpen)
+  const requestFindInScene = useUiStore((s) => s.requestFindInScene)
 
   const navigate = useNavigate()
   const location = useLocation()
@@ -56,6 +61,10 @@ export function CommandPalette() {
   const codexEntries = useCodexStore((s) => s.entries)
   const codexProjectId = useCodexStore((s) => s.projectId)
 
+  const cards = useCardStore((s) => s.cards)
+  const cardProjectId = useCardStore((s) => s.projectId)
+  const loadCards = useCardStore((s) => s.loadProject)
+
   const [query, setQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
 
@@ -73,6 +82,12 @@ export function CommandPalette() {
   useEffect(() => {
     if (open && projectStoreStatus === 'idle') fetchProjects()
   }, [open, projectStoreStatus, fetchProjects])
+
+  // Characters live in their own store, loaded on demand by the Playground.
+  // The palette is allowed to want them first.
+  useEffect(() => {
+    if (open && editorProjectId && cardProjectId !== editorProjectId) loadCards(editorProjectId)
+  }, [open, editorProjectId, cardProjectId, loadCards])
 
   // Reset the query/selection each time the palette opens, adjusted during render
   // (React's recommended pattern) rather than via an effect.
@@ -159,6 +174,19 @@ export function CommandPalette() {
       }
     }
 
+    if (editorProjectId && cardProjectId === editorProjectId) {
+      for (const card of cards) {
+        list.push({
+          id: `card-${card.id}`,
+          section: 'Characters',
+          label: card.displayName,
+          hint: card.tags[0],
+          icon: UserRound,
+          run: () => navigate(`/playground/cards/${card.id}?project=${editorProjectId}`),
+        })
+      }
+    }
+
     for (const project of projects) {
       list.push({
         id: `project-${project.id}`,
@@ -201,21 +229,47 @@ export function CommandPalette() {
     projects,
     codexEntries,
     codexProjectId,
+    cards,
+    cardProjectId,
   ])
+
+  /**
+   * The book's own words as results. Only the open project's scenes are in
+   * memory, so that's the honest search scope; selecting one hands the query
+   * to the editor's find bar so the match arrives already highlighted.
+   */
+  const proseEntries = useMemo<PaletteEntry[]>(() => {
+    if (!editorProjectId) return []
+    return searchProse(scenes, query).map((match) => ({
+      id: `prose-${match.sceneId}`,
+      section: 'In the prose',
+      label: match.snippet,
+      hint: match.sceneTitle,
+      icon: TextQuote,
+      run: () => {
+        setActiveScene(match.sceneId)
+        requestFindInScene(match.sceneId, query.trim())
+        navigate(`/editor?project=${editorProjectId}`)
+      },
+    }))
+  }, [editorProjectId, scenes, query, setActiveScene, requestFindInScene, navigate])
 
   const filtered = useMemo(() => {
     if (!query.trim()) return entries
     const q = query.toLowerCase()
-    return entries.filter(
+    const named = entries.filter(
       (e) => e.label.toLowerCase().includes(q) || e.hint?.toLowerCase().includes(q),
     )
-  }, [entries, query])
+    return [...named, ...proseEntries]
+  }, [entries, proseEntries, query])
 
   const grouped = useMemo(() => {
     const sections: PaletteEntry['section'][] = [
       'Actions',
       'Scenes',
+      'In the prose',
       'Almanac',
+      'Characters',
       'Projects',
       'Navigate',
     ]
@@ -223,6 +277,10 @@ export function CommandPalette() {
       .map((section) => ({ section, items: filtered.filter((e) => e.section === section) }))
       .filter((g) => g.items.length > 0)
   }, [filtered])
+
+  // Selection walks the list as *displayed* — grouped by section — which is
+  // not the order `filtered` was assembled in once prose results joined it.
+  const flatList = useMemo(() => grouped.flatMap((g) => g.items), [grouped])
 
   function runEntry(entry: PaletteEntry) {
     entry.run()
@@ -232,13 +290,13 @@ export function CommandPalette() {
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'ArrowDown') {
       e.preventDefault()
-      setSelectedIndex((i) => Math.min(i + 1, filtered.length - 1))
+      setSelectedIndex((i) => Math.min(i + 1, flatList.length - 1))
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
       setSelectedIndex((i) => Math.max(i - 1, 0))
     } else if (e.key === 'Enter') {
       e.preventDefault()
-      const entry = filtered[selectedIndex]
+      const entry = flatList[selectedIndex]
       if (entry) runEntry(entry)
     }
   }
@@ -261,7 +319,7 @@ export function CommandPalette() {
               setSelectedIndex(0)
             }}
             onKeyDown={handleKeyDown}
-            placeholder="Jump to a scene, project, or action…"
+            placeholder="Search your book, or jump to a scene, project, or action…"
             className="h-12 border-none px-0 shadow-none focus-visible:ring-0"
           />
         </div>

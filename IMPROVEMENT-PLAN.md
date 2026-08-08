@@ -577,8 +577,8 @@ Current sitemap: Projects · Editor · Read · Almanac · Cards (→ detail → 
 **Priority.** P1 (1), P2 (2, 3).
 
 **Acceptance criteria.**
-- [ ] ⌘K "salt road" lists the scene and opens it at the editor.
-- [ ] Rebinding focus-mode to a free key works after reload; a conflicting key is refused with the holder named.
+- [x] ⌘K "salt road" lists the scene and opens it at the editor — `scripts/palette-search-check.mjs` proves it lands with the find bar seeded and the match at "1 of 1".
+- [x] Rebinding focus-mode to a free key works after reload; a conflicting key is refused with the holder named (same harness, live).
 
 ---
 

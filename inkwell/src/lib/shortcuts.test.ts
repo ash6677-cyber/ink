@@ -1,6 +1,17 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
-import { comboKeys, matchesCombo, SHORTCUTS, shortcut } from './shortcuts'
+import {
+  applyShortcutOverrides,
+  comboFromEvent,
+  comboIsBindable,
+  comboKeys,
+  conflictingShortcut,
+  effectiveCombo,
+  matchesCombo,
+  matchesShortcut,
+  SHORTCUTS,
+  shortcut,
+} from './shortcuts'
 
 /** A stand-in for the fields `matchesCombo` reads off a real KeyboardEvent. */
 function press(
@@ -76,6 +87,77 @@ describe('the shortcut table', () => {
   it('throws on an unknown id rather than returning undefined', () => {
     // @ts-expect-error deliberately outside the union
     expect(() => shortcut('nope')).toThrow()
+  })
+})
+
+describe('shortcut overrides', () => {
+  afterEach(() => applyShortcutOverrides({}))
+
+  it('uses the default combo until an override arrives, then the override', () => {
+    expect(effectiveCombo('toggle-focus-mode')).toBe('Mod+.')
+    expect(matchesShortcut(press('.', { mod: true }), 'toggle-focus-mode')).toBe(true)
+
+    applyShortcutOverrides({ 'toggle-focus-mode': 'Mod+M' })
+    expect(effectiveCombo('toggle-focus-mode')).toBe('Mod+M')
+    expect(matchesShortcut(press('m', { mod: true }), 'toggle-focus-mode')).toBe(true)
+    // The old key must actually let go, or both would fire.
+    expect(matchesShortcut(press('.', { mod: true }), 'toggle-focus-mode')).toBe(false)
+  })
+})
+
+describe('conflictingShortcut', () => {
+  afterEach(() => applyShortcutOverrides({}))
+
+  it('names the holder when the combo is taken by an overlapping group', () => {
+    // Manuscript vs Anywhere: focus-mode may not take the palette's key.
+    expect(conflictingShortcut('toggle-focus-mode', 'Mod+K')?.id).toBe('command-palette')
+  })
+
+  it('compares combos in canonical form, not as strings', () => {
+    expect(conflictingShortcut('toggle-focus-mode', 'Shift+Mod+f')?.id).toBe('search-manuscript')
+  })
+
+  it('checks against overridden combos, not the abandoned defaults', () => {
+    applyShortcutOverrides({ 'find-in-scene': 'Mod+M' })
+    expect(conflictingShortcut('toggle-focus-mode', 'Mod+M')?.id).toBe('find-in-scene')
+    // Mod+F is free now that find-in-scene has moved off it.
+    expect(conflictingShortcut('toggle-focus-mode', 'Mod+F')).toBeNull()
+  })
+
+  it('lets non-overlapping groups share a key', () => {
+    // The Reader's ArrowRight never meets a Manuscript shortcut.
+    expect(conflictingShortcut('toggle-focus-mode', 'ArrowRight')).toBeNull()
+  })
+})
+
+describe('comboFromEvent', () => {
+  it('waits while only modifiers are down', () => {
+    expect(comboFromEvent(press('Control', { mod: true }))).toBeNull()
+    expect(comboFromEvent(press('Shift', { shift: true }))).toBeNull()
+    expect(comboFromEvent(press('Meta'))).toBeNull()
+    expect(comboFromEvent(press('Alt', { alt: true }))).toBeNull()
+  })
+
+  it('builds the combo in canonical order', () => {
+    expect(comboFromEvent(press('m', { mod: true, shift: true }))).toBe('Mod+Shift+M')
+    expect(comboFromEvent(press('F6'))).toBe('F6')
+    expect(comboFromEvent(press(' ', { alt: true }))).toBe('Alt+Space')
+  })
+})
+
+describe('comboIsBindable', () => {
+  it('accepts Mod or Alt combos and bare function keys', () => {
+    expect(comboIsBindable('Mod+M')).toBe(true)
+    expect(comboIsBindable('Alt+P')).toBe(true)
+    expect(comboIsBindable('F6')).toBe(true)
+    expect(comboIsBindable('Mod+Shift+F12')).toBe(true)
+  })
+
+  it('refuses keys that would fire in the middle of typing', () => {
+    expect(comboIsBindable('M')).toBe(false)
+    expect(comboIsBindable('Shift+M')).toBe(false)
+    expect(comboIsBindable('Space')).toBe(false)
+    expect(comboIsBindable('F13')).toBe(false)
   })
 })
 

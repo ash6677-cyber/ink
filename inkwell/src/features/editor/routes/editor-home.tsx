@@ -43,7 +43,7 @@ import { useCodexStore } from '@/stores/codex-store'
 import { useEditorStore } from '@/stores/editor-store'
 import { usePreferencesStore } from '@/stores/preferences-store'
 import { dailyTotals, useStatsStore, wordsToday } from '@/stores/stats-store'
-import { useUiStore } from '@/stores/ui-store'
+import { type PendingFind, useUiStore } from '@/stores/ui-store'
 import type { Project, RichContent } from '@/types'
 import { useDocumentTitle } from '@/lib/hooks/use-document-title'
 
@@ -197,6 +197,25 @@ export function EditorHome() {
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [activeScene, setManuscriptSearchOpen, focusMode, setFocusMode, findOpen])
+
+  // A prose result chosen in the command palette arrives here as a pending
+  // find: once the right scene is active and its editor exists, the find bar
+  // opens with the query already highlighted. Waiting on `liveEditor` is what
+  // makes this work from any route — the palette may have navigated from
+  // Projects, a whole mount earlier. Adjusted during render (the codebase's
+  // usual pattern); only the store cleanup lives in an effect.
+  const pendingFind = useUiStore((s) => s.pendingFind)
+  const clearPendingFind = useUiStore((s) => s.clearPendingFind)
+  const [handledFind, setHandledFind] = useState<PendingFind | null>(null)
+  if (pendingFind && pendingFind !== handledFind && liveEditor && activeSceneId === pendingFind.sceneId) {
+    setHandledFind(pendingFind)
+    setFindQuery(pendingFind.query)
+    setFindSeed((s) => s + 1)
+    setFindOpen(true)
+  }
+  useEffect(() => {
+    if (pendingFind && pendingFind === handledFind) clearPendingFind()
+  }, [pendingFind, handledFind, clearPendingFind])
 
   // Entering focus mode should land the caret back in the prose. The writer
   // pressed a button that says "just let me write"; making them click the
