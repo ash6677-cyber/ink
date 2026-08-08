@@ -190,7 +190,7 @@ export function StatsHome() {
         description="Word-count goals, streaks, and session history."
         actions={
           <Select value={scope} onValueChange={setScope}>
-            <SelectTrigger className="w-56">
+            <SelectTrigger className="w-56" aria-label="Which projects to count">
               <SelectValue placeholder="All projects" />
             </SelectTrigger>
             <SelectContent>

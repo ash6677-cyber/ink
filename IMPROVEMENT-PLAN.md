@@ -753,9 +753,9 @@ Current sitemap: Projects · Editor · Read · Almanac · Cards (→ detail → 
 **Priority.** P1 (1, 5), P2 (2, 3, 4).
 
 **Acceptance criteria.**
-- [ ] Axe: zero critical violations per route.
-- [ ] Full app tour possible keyboard-only (documented walkthrough).
-- [ ] Simulated IDB failure lands on an explanatory screen with export guidance, not white.
+- [x] Axe: zero critical violations per route — `scripts/robustness-check.mjs` scans 12 routes; unnamed selects/switches/sliders in the editor drawer, Stats, and Cover Studio were fixed.
+- [x] Full app tour possible keyboard-only — `inkwell/docs/KEYBOARD_TOUR.md`, anchored on the ⌘K palette.
+- [x] Simulated IDB failure lands on an explanatory screen with export guidance, not white — `StorageGate` probes IndexedDB at boot; harness boots with IndexedDB removed and asserts the explanation.
 
 ---
 

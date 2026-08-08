@@ -402,7 +402,7 @@ export function CoversHome() {
           <section className="space-y-2">
             <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Aspect</Label>
             <Select value={cover.aspectPreset} onValueChange={(v: CoverAspectPreset) => setAspectPreset(v)}>
-              <SelectTrigger>
+              <SelectTrigger aria-label="Cover aspect ratio">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -428,6 +428,7 @@ export function CoversHome() {
                 <Label className="text-xs">Zoom</Label>
                 <input
                   type="range"
+                  aria-label="Image zoom"
                   min={MIN_ZOOM}
                   max={MAX_ZOOM}
                   step={0.05}
@@ -440,6 +441,7 @@ export function CoversHome() {
                 <Label className="text-xs">Horizontal</Label>
                 <input
                   type="range"
+                  aria-label="Image horizontal position"
                   min={0}
                   max={100}
                   value={cover.crop.x}
@@ -451,6 +453,7 @@ export function CoversHome() {
                 <Label className="text-xs">Vertical</Label>
                 <input
                   type="range"
+                  aria-label="Image vertical position"
                   min={0}
                   max={100}
                   value={cover.crop.y}
@@ -464,6 +467,7 @@ export function CoversHome() {
                 </Label>
                 <input
                   type="range"
+                  aria-label="Image rotation"
                   min={-45}
                   max={45}
                   value={cover.crop.rotation}
@@ -480,6 +484,7 @@ export function CoversHome() {
                 Overlay
               </Label>
               <Switch
+                aria-label="Toggle overlay"
                 checked={cover.overlay.enabled}
                 onCheckedChange={(v) => updateOverlay({ enabled: v })}
               />
@@ -491,6 +496,7 @@ export function CoversHome() {
                     <Label className="text-xs">Color</Label>
                     <input
                       type="color"
+                      aria-label="Overlay color"
                       value={cover.overlay.color}
                       onChange={(e) => updateOverlay({ color: e.target.value })}
                       className="h-9 pointer-coarse:h-11 w-full cursor-pointer rounded-md border border-border bg-transparent p-0.5"
@@ -502,7 +508,7 @@ export function CoversHome() {
                       value={cover.overlay.direction}
                       onValueChange={(v: 'top' | 'bottom' | 'full') => updateOverlay({ direction: v })}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger aria-label="Overlay direction">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -517,6 +523,7 @@ export function CoversHome() {
                   <Label className="text-xs">Opacity — {Math.round(cover.overlay.opacity * 100)}%</Label>
                   <input
                     type="range"
+                    aria-label="Overlay opacity"
                     min={0}
                     max={1}
                     step={0.05}

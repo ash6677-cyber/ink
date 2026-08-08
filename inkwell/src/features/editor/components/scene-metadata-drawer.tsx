@@ -144,7 +144,7 @@ export function SceneMetadataDrawer({
             value={scene.status}
             onValueChange={(value: SceneStatus) => updateSceneMeta(scene.id, { status: value })}
           >
-            <SelectTrigger>
+            <SelectTrigger aria-label="Scene status">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

@@ -85,7 +85,7 @@ export function TypographyLayerRow({
             <div className="grid gap-1.5">
               <Label className="text-xs">Font</Label>
               <Select value={layer.fontFamily} onValueChange={(v) => onChange({ fontFamily: v })}>
-                <SelectTrigger>
+                <SelectTrigger aria-label="Layer font">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -103,7 +103,7 @@ export function TypographyLayerRow({
                 value={String(layer.fontWeight)}
                 onValueChange={(v) => onChange({ fontWeight: Number(v) })}
               >
-                <SelectTrigger>
+                <SelectTrigger aria-label="Layer font weight">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -121,6 +121,7 @@ export function TypographyLayerRow({
             <Label className="text-xs">Size — {layer.fontSize.toFixed(1)}%</Label>
             <input
               type="range"
+              aria-label="Layer text size"
               min={2}
               max={20}
               step={0.5}
@@ -134,6 +135,7 @@ export function TypographyLayerRow({
             <Label className="text-xs">Letter spacing — {layer.letterSpacing}%</Label>
             <input
               type="range"
+              aria-label="Layer letter spacing"
               min={0}
               max={40}
               step={1}
@@ -149,6 +151,7 @@ export function TypographyLayerRow({
               <div className="flex items-center gap-2">
                 <input
                   type="color"
+                  aria-label="Layer text color"
                   value={layer.color}
                   onChange={(e) => onChange({ color: e.target.value })}
                   className="size-9 shrink-0 cursor-pointer rounded-md border border-border bg-transparent p-0.5"
@@ -205,11 +208,12 @@ export function TypographyLayerRow({
           <div className="grid grid-cols-2 gap-3">
             <div className="flex items-center justify-between">
               <Label className="text-xs">Drop shadow</Label>
-              <Switch checked={layer.shadow} onCheckedChange={(v) => onChange({ shadow: v })} />
+              <Switch aria-label="Toggle drop shadow" checked={layer.shadow} onCheckedChange={(v) => onChange({ shadow: v })} />
             </div>
             <div className="flex items-center justify-between">
               <Label className="text-xs">Outline</Label>
               <Switch
+                aria-label="Toggle outline"
                 checked={layer.stroke ?? false}
                 onCheckedChange={(v) => onChange({ stroke: v })}
               />

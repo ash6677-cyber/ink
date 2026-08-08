@@ -44,7 +44,12 @@ export function ProjectsHome() {
     // The sample book gets its one chance to exist before the first fetch,
     // so a brand-new library's first paint already has something on it
     // rather than flashing empty and then filling in.
-    maybeSeedSampleBook().finally(() => fetchProjects())
+    // The catch is not decoration: with storage blocked (private windows),
+    // seeding rejects, and an unhandled rejection here would race the
+    // storage gate's explanation with an error overlay.
+    maybeSeedSampleBook()
+      .catch(() => {})
+      .finally(() => fetchProjects())
   }, [fetchProjects])
 
   function openCreateDialog() {
