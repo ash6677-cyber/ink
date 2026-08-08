@@ -550,8 +550,8 @@ Current sitemap: Projects · Editor · Read · Almanac · Cards (→ detail → 
 **Priority.** P2 (1, 2), P3 (4).
 
 **Acceptance criteria.**
-- [ ] Beats editable from the corkboard; changes appear in the editor's scene panel.
-- [ ] Merging two labels updates every scene carrying them.
+- [x] Beats editable from the corkboard; changes appear in the editor's scene panel — card flip via `scripts/planning-check.mjs`.
+- [x] Merging two labels updates every scene carrying them — label manager on Planning; the both-labels scene keeps exactly one copy (harness-verified).
 
 ---
 

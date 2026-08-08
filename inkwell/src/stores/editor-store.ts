@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 
 import { chapterRepo, sceneRepo, snapshotRepo } from '@/lib/db/repositories'
+import { mergeLabels } from '@/lib/labels'
 import { useStatsStore } from '@/stores/stats-store'
 import { binChapter, binScene } from '@/stores/trash-store'
 import type { Chapter, ChapterKind, Scene, SceneStatus, Snapshot } from '@/types'
@@ -38,6 +39,12 @@ interface EditorStoreState {
     changes: Partial<Pick<Scene, 'status' | 'summary' | 'labels' | 'beats'>>,
   ) => Promise<void>
   updateChapterStatus: (id: string, status: SceneStatus) => Promise<void>
+
+  /** Renames a label on every scene carrying it; renaming onto an existing
+   * label is the merge operation — the two become one, deduplicated. */
+  renameLabel: (from: string, to: string) => Promise<void>
+  /** Strips a label from every scene carrying it. */
+  removeLabel: (name: string) => Promise<void>
 
   listSnapshots: (sceneId: string) => Promise<Snapshot[]>
   restoreSnapshot: (snapshot: Snapshot) => Promise<void>
@@ -211,6 +218,42 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
   updateChapterStatus: async (id, status) => {
     await chapterRepo.update(id, { status })
     set({ chapters: get().chapters.map((c) => (c.id === id ? { ...c, status } : c)) })
+  },
+
+  renameLabel: async (from, to) => {
+    const target = to.trim()
+    if (!target || target === from) return
+    const touched = new Map<string, string[]>()
+    for (const scene of get().scenes) {
+      if (!scene.labels.includes(from)) continue
+      const next = mergeLabels(scene.labels, from, target)
+      await sceneRepo.update(scene.id, { labels: next })
+      touched.set(scene.id, next)
+    }
+    if (touched.size > 0) {
+      set({
+        scenes: get().scenes.map((s) =>
+          touched.has(s.id) ? { ...s, labels: touched.get(s.id)! } : s,
+        ),
+      })
+    }
+  },
+
+  removeLabel: async (name) => {
+    const touched = new Map<string, string[]>()
+    for (const scene of get().scenes) {
+      if (!scene.labels.includes(name)) continue
+      const next = scene.labels.filter((l) => l !== name)
+      await sceneRepo.update(scene.id, { labels: next })
+      touched.set(scene.id, next)
+    }
+    if (touched.size > 0) {
+      set({
+        scenes: get().scenes.map((s) =>
+          touched.has(s.id) ? { ...s, labels: touched.get(s.id)! } : s,
+        ),
+      })
+    }
   },
 
   listSnapshots: async (sceneId) => {

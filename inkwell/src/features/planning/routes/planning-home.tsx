@@ -1,4 +1,4 @@
-import { Library } from 'lucide-react'
+import { Library, Tags } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 
@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/common/page-header'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { CorkboardView } from '@/features/planning/components/corkboard-view'
+import { LabelManagerDialog } from '@/features/planning/components/label-manager'
 import { StatusBoardView } from '@/features/planning/components/status-board-view'
 import { projectRepo } from '@/lib/db/repositories'
 import { useEditorStore } from '@/stores/editor-store'
@@ -19,6 +20,7 @@ export function PlanningHome() {
   const projectId = searchParams.get('project')
 
   const [project, setProject] = useState<Project | null | undefined>(undefined)
+  const [labelsOpen, setLabelsOpen] = useState(false)
   useEffect(() => {
     let cancelled = false
     const lookup = projectId ? projectRepo.get(projectId) : Promise.resolve(undefined)
@@ -57,7 +59,16 @@ export function PlanningHome() {
 
   return (
     <div className="flex h-full flex-col">
-      <PageHeader title="Planning" description={project?.title} />
+      <PageHeader
+        title="Planning"
+        description={project?.title}
+        actions={
+          <Button variant="outline" size="sm" onClick={() => setLabelsOpen(true)}>
+            <Tags className="size-3.5" /> Labels
+          </Button>
+        }
+      />
+      <LabelManagerDialog open={labelsOpen} onOpenChange={setLabelsOpen} />
       {status === 'loading' || status === 'idle' ? (
         <p className="p-6 text-center text-sm text-muted-foreground">Loading…</p>
       ) : (

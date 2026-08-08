@@ -1,6 +1,6 @@
 [package]
 name = "inkwell"
-version = "0.4.1"
+version = "0.5.0"
 description = "INKWELL — a calm, local-first novel-writing studio"
 authors = ["INKWELL"]
 license = ""
