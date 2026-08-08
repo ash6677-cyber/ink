@@ -54,23 +54,16 @@ jobs:
         # A project site is served from /<repo>/, so the asset prefix has to
         # carry that segment or every script 404s.
         #
-        # The Firebase values come from repository *variables*, not secrets:
-        # every VITE_ value is compiled into the public JavaScript bundle, so
-        # marking them secret would disguise rather than prevent disclosure.
-        # Firebase web config is meant to be public — access is enforced by
-        # firestore.rules, not by hiding the API key — and secrets would also
-        # be masked in the build log, turning a typo into a mystery.
-        #
-        # Left unset, the build ships with cloud accounts switched off; the
-        # app is local-first and fully usable either way.
+        # The Firebase values come from the committed `.env.production` — a
+        # Firebase web config is an address, not a secret (access is enforced
+        # by firestore.rules, not by hiding the API key), so it lives in the
+        # repository where Vite picks it up on its own. Do NOT export
+        # VITE_FIREBASE_* here from repository variables: an unset variable
+        # renders as an *empty string*, the env var then exists, and Vite lets
+        # real process env shadow .env files — which silently builds the site
+        # with cloud accounts switched off.
         env:
           INKWELL_BASE_PATH: /${{ github.event.repository.name }}/
-          VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}
-          VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID }}
-          VITE_FIREBASE_STORAGE_BUCKET: ${{ vars.VITE_FIREBASE_STORAGE_BUCKET }}
-          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.VITE_FIREBASE_MESSAGING_SENDER_ID }}
-          VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID }}
         run: npm run build
 
       - name: Assemble the site
@@ -111,11 +104,18 @@ jobs:
           grep -oE '(src|href)="[^"]*"' _site/index.html | head -5
 
       - name: Report which mode INKWELL built in
+        # The check is against the *published bundle*, not the inputs — this
+        # is exactly the failure mode that once shipped silently: config
+        # present in the repo, absent from the built JavaScript.
         run: |
-          if [ -n "${{ vars.VITE_FIREBASE_API_KEY }}" ]; then
-            echo "::notice::INKWELL built WITH cloud accounts (project ${{ vars.VITE_FIREBASE_PROJECT_ID }}). Confirm ${{ github.repository_owner }}.github.io is on the Firebase authorised domains list, or sign-in will be rejected."
+          PROJECT_ID=$(grep -oP '^VITE_FIREBASE_PROJECT_ID=\K\S+' inkwell/.env.production || true)
+          if [ -n "$PROJECT_ID" ] && grep -rql "$PROJECT_ID" _site/assets/; then
+            echo "::notice::INKWELL built WITH cloud accounts (project $PROJECT_ID — verified present in the built assets). Confirm ${{ github.repository_owner }}.github.io is on the Firebase authorised domains list, or sign-in will be rejected."
+          elif [ -n "$PROJECT_ID" ]; then
+            echo "::error::inkwell/.env.production names project $PROJECT_ID but the built assets do not contain it — the Firebase config was dropped at build time."
+            exit 1
           else
-            echo "::notice::INKWELL built WITHOUT cloud accounts — no VITE_FIREBASE_API_KEY repository variable is set. The app is local-first and fully usable; the Account tab will explain that sign-in is unavailable. See inkwell/docs/CLOUD_AUTH_SETUP.md to enable it."
+            echo "::notice::INKWELL built WITHOUT cloud accounts — no Firebase project in inkwell/.env.production. The app is local-first and fully usable; the Account tab will explain that sign-in is unavailable. See inkwell/docs/CLOUD_AUTH_SETUP.md to enable it."
           fi
 
       - uses: actions/upload-pages-artifact@v3
