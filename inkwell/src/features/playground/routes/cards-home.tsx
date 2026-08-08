@@ -1,5 +1,5 @@
-import { Download, Library, Plus, SearchX, Users } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Download, FileUp, Library, Plus, SearchX, Users } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 
 import { ConfirmDeleteDialog } from '@/components/common/confirm-delete-dialog'
@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/components/ui/use-toast'
 import { CardFormDialog } from '@/features/playground/components/card-form-dialog'
 import { CardToolbar } from '@/features/playground/components/card-toolbar'
+import { ImportCardFileDialog } from '@/features/playground/components/import-card-file-dialog'
 import { ImportCharactersDialog } from '@/features/playground/components/import-characters-dialog'
 import { CharacterCardTile } from '@/features/playground/components/character-card-tile'
 import {
@@ -16,6 +17,9 @@ import {
   applyCardFilter,
   filterIsEmpty,
 } from '@/features/playground/lib/card-filter'
+import { exportCardJson, exportCardPng } from '@/features/playground/lib/card-export'
+import { readCardImport } from '@/features/playground/lib/card-import'
+import type { CardFileData } from '@/features/playground/lib/card-file'
 import { useCardStore } from '@/stores/card-store'
 import type { CharacterCard } from '@/types'
 import { useDocumentTitle } from '@/lib/hooks/use-document-title'
@@ -35,6 +39,31 @@ export function CardsHome() {
   // right now, not a setting to be remembered and wondered about later.
   const [filter, setFilter] = useState(EMPTY_FILTER)
   const [importOpen, setImportOpen] = useState(false)
+  const [cardFileData, setCardFileData] = useState<CardFileData | null>(null)
+  const cardFileInputRef = useRef<HTMLInputElement>(null)
+
+  async function handleCardFilePicked(file: File | undefined) {
+    if (!file) return
+    const data = await readCardImport(file)
+    if (!data) {
+      toast({
+        title: 'Not a card file',
+        description: 'Card files are .inkwell-card.json, or PNGs exported from a card.',
+        variant: 'destructive',
+      })
+      return
+    }
+    setCardFileData(data)
+  }
+
+  async function handleExport(card: CharacterCard, format: 'json' | 'png') {
+    try {
+      const saved = format === 'json' ? await exportCardJson(card) : await exportCardPng(card)
+      if (saved === 'saved') toast({ title: `"${card.displayName}" exported` })
+    } catch {
+      toast({ title: 'Could not export the card', variant: 'destructive' })
+    }
+  }
 
   useEffect(() => {
     if (projectId) loadProject(projectId)
@@ -90,6 +119,13 @@ export function CardsHome() {
               <>
                 <Button size="sm" variant="outline" onClick={() => setImportOpen(true)}>
                   <Download /> Import
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => cardFileInputRef.current?.click()}
+                >
+                  <FileUp /> Card file
                 </Button>
                 <Button size="sm" onClick={() => setFormOpen(true)}>
                   <Plus /> New card
@@ -163,6 +199,8 @@ export function CardsHome() {
                   card={card}
                   projectId={projectId}
                   onDelete={() => setDeletingCard(card)}
+                  onExportJson={() => void handleExport(card, 'json')}
+                  onExportPng={() => void handleExport(card, 'png')}
                 />
               ))}
             </div>
@@ -172,6 +210,23 @@ export function CardsHome() {
 
       <CardFormDialog open={formOpen} onOpenChange={setFormOpen} onSubmit={handleCreate} />
 
+      <input
+        ref={cardFileInputRef}
+        type="file"
+        accept=".json,image/png"
+        className="hidden"
+        aria-label="Import a card file"
+        onChange={(e) => {
+          void handleCardFilePicked(e.target.files?.[0])
+          e.target.value = ''
+        }}
+      />
+      <ImportCardFileDialog
+        data={cardFileData}
+        onOpenChange={(open) => {
+          if (!open) setCardFileData(null)
+        }}
+      />
       <ImportCharactersDialog
         open={importOpen}
         onOpenChange={setImportOpen}

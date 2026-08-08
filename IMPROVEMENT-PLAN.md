@@ -131,8 +131,8 @@ Current sitemap: Projects · Editor · Read · Almanac · Cards (→ detail → 
 **Acceptance criteria.**
 - [x] Typing in the filter narrows the grid live; tag chip filters combine (all tags must match — narrowing, not widening).
 - [x] A preset restyles a card in one tap and shows in the grid identically. Presets deliberately leave the accent alone.
-- [ ] Export a card to JSON and to PNG… **§4.4/4.5 not in this phase** (roadmap puts them in Phase 9).
-- [ ] A card face exports as a PNG… **§4.5, Phase 9.**
+- [x] Export a card to JSON and to PNG — versioned card files with the portrait inside as a data URL; the PNG carries the whole card in a tEXt chunk and re-imports as the same character (`scripts/card-file-check.mjs`, 18 checks).
+- [x] A card face exports as a PNG — canvas twin of CardFace (render-card-face.ts, following render-cover.ts), portrait crop, vignette, finish sheen, accent frame, name/tags.
 
 ---
 

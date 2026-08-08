@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { MoreHorizontal, Trash2 } from 'lucide-react'
+import { MoreHorizontal, Trash2, FileJson, ImageDown } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 import {
@@ -18,6 +18,8 @@ interface CharacterCardTileProps {
   card: CharacterCard
   projectId: string
   onDelete: () => void
+  onExportJson: () => void
+  onExportPng: () => void
 }
 
 /**
@@ -27,7 +29,13 @@ interface CharacterCardTileProps {
  * on hover. Everything about how the card *looks* belongs to `CardFace`, so
  * this screen cannot drift from the detail page.
  */
-export function CharacterCardTile({ card, projectId, onDelete }: CharacterCardTileProps) {
+export function CharacterCardTile({
+  card,
+  projectId,
+  onDelete,
+  onExportJson,
+  onExportPng,
+}: CharacterCardTileProps) {
   const navigate = useNavigate()
   const image = useLiveQuery(
     () => (card.avatarImageId ? imageAssetRepo.get(card.avatarImageId) : Promise.resolve(undefined)),
@@ -69,6 +77,12 @@ export function CharacterCardTile({ card, projectId, onDelete }: CharacterCardTi
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+              <DropdownMenuItem onClick={onExportJson}>
+                <FileJson /> Export card file
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onExportPng}>
+                <ImageDown /> Export as PNG card
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
                 <Trash2 /> Delete
               </DropdownMenuItem>
