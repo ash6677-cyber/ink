@@ -67,7 +67,7 @@ export function LabelManagerDialog({
             <Tags className="size-6 text-muted-foreground/60" aria-hidden />
             <p className="text-sm text-muted-foreground">
               No labels yet. Add them to scenes from the editor&rsquo;s details panel — they
-              appear on the corkboard cards too.
+              appear on the outline cards too.
             </p>
           </div>
         ) : (

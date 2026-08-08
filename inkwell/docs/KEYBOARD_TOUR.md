@@ -71,5 +71,5 @@ themselves, as on any Windows application.
 - The Cover Studio's drag-to-frame gesture is pointer-only by design; the
   sliders beside it (zoom, horizontal, vertical, rotation) do the same job
   and are plain range inputs — arrows adjust them.
-- The corkboard's drag-to-reorder likewise has button/menu equivalents for
+- The outline board's drag-to-reorder likewise has button/menu equivalents for
   every operation.

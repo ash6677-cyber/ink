@@ -74,7 +74,7 @@ export function PlanningHome() {
       ) : (
         <Tabs defaultValue="corkboard" className="flex min-h-0 flex-1 flex-col">
           <TabsList className="mx-4 mt-3 w-fit">
-            <TabsTrigger value="corkboard">Corkboard</TabsTrigger>
+            <TabsTrigger value="corkboard">Outline</TabsTrigger>
             <TabsTrigger value="status">Status board</TabsTrigger>
           </TabsList>
           <TabsContent value="corkboard" className="min-h-0 flex-1">
