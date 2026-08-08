@@ -10,7 +10,12 @@
  * leaving the local library exactly where it was.
  *
  *   npx firebase emulators:start --only auth,firestore --project demo-inkwell
- *   INKWELL_BASE_PATH=/ VITE_USE_FIREBASE_EMULATOR=true npx vite build --outDir dist-sync
+ *   INKWELL_BASE_PATH=/ VITE_USE_FIREBASE_EMULATOR=true VITE_FIREBASE_API_KEY= \
+ *     npx vite build --outDir dist-sync
+ *   (VITE_FIREBASE_API_KEY is *blanked deliberately*: the committed
+ *   .env.production would otherwise put the real project id into this build,
+ *   and the emulator writes would land under it instead of demo-inkwell —
+ *   the harness's direct Firestore probes query demo-inkwell.)
  *   (cd dist-sync && python3 -m http.server 5411 --bind 127.0.0.1 &)
  *   node scripts/sync-check.mjs
  */

@@ -1,5 +1,5 @@
 import { Loader2 } from 'lucide-react'
-import { useState, type ComponentType } from 'react'
+import { useState, type ComponentType, useEffect } from 'react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -51,6 +51,14 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
   // rather than shown-and-broken. See docs/CLOUD_AUTH_SETUP.md for the
   // deep-link flow that would fix it.
   const providers = isTauriRuntime() ? [] : enabledAuthProviders
+
+  const preloadAuth = useAuthStore((s) => s.preloadAuth)
+  // The dialog opening IS sign-in intent: start fetching the auth SDK now,
+  // so the provider popup opens instantly on click instead of after a
+  // download that popup blockers mistake for an unsolicited window.
+  useEffect(() => {
+    if (open) preloadAuth()
+  }, [open, preloadAuth])
 
   const error = useAuthStore((s) => s.error)
   const clearError = useAuthStore((s) => s.clearError)

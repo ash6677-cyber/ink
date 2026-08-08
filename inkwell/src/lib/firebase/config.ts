@@ -10,17 +10,22 @@ import {
 } from 'firebase/firestore'
 
 import { isTauriRuntime } from '@/lib/db/tauri-bridge'
+import { cloudEnabled as cloudEnabledFlag, hasRealConfig, useEmulator } from '@/lib/firebase/cloud-flags'
 
 /**
- * Real projects set these via `.env.local` (see `.env.example`). With none
- * set, we fall back to a `demo-` project id talking only to the local
- * emulator suite — the values are never sent anywhere real, so placeholders
- * are fine. `demo-` is a reserved Firebase prefix the emulator recognizes
- * as "never a real project," which is what lets email/password auth and
- * Firestore sync be built and tested end-to-end without anyone's real
- * Firebase credentials.
+ * NOTE: this module carries the Firebase SDK (about half a megabyte of
+ * JavaScript) and must only ever be imported dynamically, behind sign-in
+ * intent or a remembered session. Boot-path code that merely needs to know
+ * whether cloud accounts exist imports `@/lib/firebase/cloud-flags` instead.
+ *
+ * Real projects set the env values via `.env.local` (see `.env.example`).
+ * With none set, we fall back to a `demo-` project id talking only to the
+ * local emulator suite — the values are never sent anywhere real, so
+ * placeholders are fine. `demo-` is a reserved Firebase prefix the emulator
+ * recognizes as "never a real project," which is what lets email/password
+ * auth and Firestore sync be built and tested end-to-end without anyone's
+ * real Firebase credentials.
  */
-const hasRealConfig = Boolean(import.meta.env.VITE_FIREBASE_API_KEY)
 
 const firebaseConfig = hasRealConfig
   ? {
@@ -78,31 +83,9 @@ function createFirestore(): Firestore {
 
 export const firestore = createFirestore()
 
-/**
- * Use the local emulator suite whenever there's no real project configured
- * (dev by default) or when explicitly requested — never in a production
- * build that a writer would receive, and never when pointed at a real
- * project.
- */
-const useEmulator =
-  import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true' || (!hasRealConfig && import.meta.env.DEV)
-
-/**
- * Whether cloud accounts and sync are actually reachable.
- *
- * A production build with no Firebase project configured has nowhere to sign
- * in to: the emulator fallback points at 127.0.0.1, which on a deployed site
- * would mean the *visitor's* own machine. Rather than offer a sign-in button
- * that hangs against an emulator nobody is running, the cloud features
- * declare themselves unavailable and the app stays what it already is
- * without them — fully local-first.
- *
- * A build made *expressly* for the emulator counts as cloud-enabled: that is
- * what lets the sync acceptance harness drive the production bundle — real
- * sign-up form, real engine, real Firestore semantics — with nobody's real
- * credentials anywhere near it.
- */
-export const cloudEnabled = hasRealConfig || import.meta.env.DEV || useEmulator
+/** Re-exported for existing importers; defined in cloud-flags so the answer
+ * is available without loading the SDK. */
+export const cloudEnabled = cloudEnabledFlag
 
 let emulatorsConnected = false
 export function connectToEmulatorsIfConfigured() {

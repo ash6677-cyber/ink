@@ -723,9 +723,9 @@ Current sitemap: Projects · Editor · Read · Almanac · Cards (→ detail → 
 **Priority.** P1 (1, 3), P2 (4, 5).
 
 **Acceptance criteria.**
-- [ ] `perf.md` exists with reproducible commands and the current numbers table.
-- [ ] Signed-out cold start downloads no Firebase bytes (network log).
-- [ ] Big-book fixture meets every target above, or the miss is documented with a follow-up.
+- [x] `perf.md` exists with reproducible commands and the current numbers table — `inkwell/docs/perf.md`, fed by `scripts/perf-baseline.mjs`.
+- [x] Signed-out cold start downloads no Firebase bytes — the SDK loads inside syncEngine.start()/behind the auth dialog and a remembered-session flag; network-log-verified as a hard gate in perf-baseline.
+- [x] Big-book fixture meets every target above, or the miss is documented with a follow-up — misses (boot JS size, throttled cold start) documented in perf.md with the vendor-chunk-diet follow-up.
 
 ---
 

@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-import { cloudEnabled } from '@/lib/firebase/config'
+import { cloudEnabled } from '@/lib/firebase/cloud-flags'
 import { syncEngine } from '@/lib/sync/sync-engine'
 import { startSyncRefreshBridge } from '@/lib/sync/sync-refresh'
 import { useAuthStore } from '@/stores/auth-store'

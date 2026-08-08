@@ -1,16 +1,7 @@
-import {
-  collection,
-  doc,
-  getDocs,
-  onSnapshot,
-  setDoc,
-  writeBatch,
-  type Unsubscribe,
-} from 'firebase/firestore'
+import type { Firestore, Unsubscribe } from 'firebase/firestore'
 
 import type { TableLike } from '@/lib/db/repository'
 import { conflictLabel, localTextWouldBeLost } from '@/lib/sync/conflict'
-import { firestore } from '@/lib/firebase/config'
 import { decodeEntity, encodeEntity, isTombstone, tombstoneFor } from '@/lib/sync/entity-codec'
 import type { LocalChangeKind } from '@/lib/sync/synced-table'
 import type { BaseEntity, Scene } from '@/types'
@@ -64,8 +55,21 @@ function isSyncedTable(name: string): name is SyncedTableName {
   return (SYNCED_TABLES as readonly string[]).includes(name)
 }
 
+/** The firebase/firestore module's shape, for the lazily loaded copy. */
+type FirestoreModule = typeof import('firebase/firestore')
+
 class SyncEngine {
   private uid: string | null = null
+  /**
+   * The SDK, loaded on `start()` and never before. The engine's façade —
+   * registerTable, notifyLocalChange, subscribe — is imported by the
+   * database layer at boot on every visit, signed in or not; the half
+   * megabyte of Firestore only belongs in builds of the moment someone
+   * actually has an account to sync. Non-null in every method below `start`,
+   * because those are only reachable once `start` has awaited the load.
+   */
+  private fs: FirestoreModule | null = null
+  private db: Firestore | null = null
   private readonly tables = new Map<SyncedTableName, AnyTable>()
   private readonly pending = new Map<SyncedTableName, Map<string, LocalChangeKind>>()
   private unsubscribes: Unsubscribe[] = []
@@ -160,6 +164,14 @@ class SyncEngine {
     this.uid = uid
     this.setState({ status: 'connecting', error: null })
     try {
+      if (!this.fs || !this.db) {
+        const [fs, cfg] = await Promise.all([
+          import('firebase/firestore'),
+          import('@/lib/firebase/config'),
+        ])
+        this.fs = fs
+        this.db = cfg.firestore
+      }
       await this.reconcile()
       this.listenForRemoteChanges()
       this.setState({ status: 'idle', lastSyncedAt: Date.now(), error: null })
@@ -199,7 +211,7 @@ class SyncEngine {
   }
 
   private remoteCollection(table: SyncedTableName) {
-    return collection(firestore, 'users', this.uid!, table)
+    return this.fs!.collection(this.db!, 'users', this.uid!, table)
   }
 
   /**
@@ -216,7 +228,7 @@ class SyncEngine {
       if (!localTable) continue
 
       const [remoteDocs, localEntities] = await Promise.all([
-        getDocs(this.remoteCollection(table)),
+        this.fs!.getDocs(this.remoteCollection(table)),
         localTable.toArray(),
       ])
 
@@ -271,8 +283,8 @@ class SyncEngine {
 
     let chunks: string[] = []
     if (remoteDoc._chunked) {
-      const chunkDocs = await getDocs(
-        collection(firestore, 'users', this.uid!, table, id, 'chunks'),
+      const chunkDocs = await this.fs!.getDocs(
+        this.fs!.collection(this.db!, 'users', this.uid!, table, id, 'chunks'),
       )
       chunks = chunkDocs.docs
         .map((snapshot) => ({
@@ -346,7 +358,7 @@ class SyncEngine {
     const localTable = this.tables.get(table)
     if (!localTable || !this.uid) return
 
-    let batch = writeBatch(firestore)
+    let batch = this.fs!.writeBatch(this.db!)
     let batched = 0
 
     for (const id of ids) {
@@ -354,17 +366,18 @@ class SyncEngine {
       if (!entity) continue
 
       const { doc: encoded, chunks } = await encodeEntity(table, entity)
-      const ref = doc(firestore, 'users', this.uid, table, id)
+      const ref = this.fs!.doc(this.db!, 'users', this.uid, table, id)
 
       if (chunks.length > 0) {
         // Chunked payloads are written outside the batch: a single large
         // asset can exceed the batch's own size budget on its own.
-        await setDoc(ref, encoded)
+        await this.fs!.setDoc(ref, encoded)
         await Promise.all(
           chunks.map((data, index) =>
-            setDoc(doc(firestore, 'users', this.uid!, table, id, 'chunks', String(index)), {
-              data,
-            }),
+            this.fs!.setDoc(
+              this.fs!.doc(this.db!, 'users', this.uid!, table, id, 'chunks', String(index)),
+              { data },
+            ),
           ),
         )
         continue
@@ -374,7 +387,7 @@ class SyncEngine {
       batched += 1
       if (batched >= BATCH_LIMIT) {
         await batch.commit()
-        batch = writeBatch(firestore)
+        batch = this.fs!.writeBatch(this.db!)
         batched = 0
       }
     }
@@ -404,7 +417,7 @@ class SyncEngine {
           // Soft-delete: a hard delete would be indistinguishable from
           // "this device hasn't uploaded it yet", and the record would come
           // straight back on the next reconcile from another device.
-          await setDoc(doc(firestore, 'users', this.uid, table, id), tombstoneFor(id))
+          await this.fs!.setDoc(this.fs!.doc(this.db!, 'users', this.uid, table, id), tombstoneFor(id))
         }
       }
       this.setState({ status: 'idle', lastSyncedAt: Date.now(), error: null })
@@ -427,7 +440,7 @@ class SyncEngine {
   private listenForRemoteChanges() {
     for (const table of SYNCED_TABLES) {
       if (!this.tables.has(table)) continue
-      const unsubscribe = onSnapshot(
+      const unsubscribe = this.fs!.onSnapshot(
         this.remoteCollection(table),
         (snapshot) => {
           void (async () => {
