@@ -1,5 +1,6 @@
 import { BarChart3, Flame, PenLine, Target } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 
 import { EmptyState } from '@/components/common/empty-state'
 import { PageHeader } from '@/components/common/page-header'
@@ -117,7 +118,11 @@ export function StatsHome() {
   const { projects, wordCounts, fetchProjects } = useProjectStore()
   const { toast } = useToast()
 
-  const [scope, setScope] = useState('all')
+  // The nav rail carries the open book from screen to screen via `?project=`;
+  // Stats honoring it is what makes "set a goal in the editor, see it here"
+  // land on the same book instead of the all-projects rollup.
+  const [searchParams] = useSearchParams()
+  const [scope, setScope] = useState(searchParams.get('project') ?? 'all')
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {

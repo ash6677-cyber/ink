@@ -363,8 +363,8 @@ Current sitemap: Projects · Editor · Read · Almanac · Cards (→ detail → 
 
 **Acceptance criteria.**
 - [x] Typing then waiting shows "Saved · 12:04"; a failed write shows a destructive-coloured alert that says the text is still there rather than a silent nothing.
-- [ ] Goal editable from the editor in ≤2 clicks; Stats reflects it.
-- [ ] Replace-in-scene leaves other scenes untouched (live-verified).
+- [x] Goal editable from the editor in ≤2 clicks; Stats reflects it — goal chip in the editor header; Stats now honors `?project=` so it lands on the same book (`scripts/editor-niceties-check.mjs`).
+- [x] Replace-in-scene leaves other scenes untouched — live-verified against disk in `scripts/editor-niceties-check.mjs`.
 
 ---
 
