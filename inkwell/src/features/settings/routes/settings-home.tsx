@@ -1,3 +1,5 @@
+import { AI_FEATURE_LABEL, presetForFeature, type AiFeature } from '@/lib/ai/feature-preset'
+import { usePreferencesStore } from '@/stores/preferences-store'
 import {
   CheckCircle2,
   Database,
@@ -27,6 +29,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useToast } from '@/components/ui/use-toast'
 import { AccountSettings } from '@/features/auth/components/account-settings'
@@ -57,6 +66,7 @@ const TABS = ['ai', 'appearance', 'shortcuts', 'data', 'account'] as const
 const SETTINGS_INDEX: { label: string; tab: string; anchor?: string }[] = [
   { label: 'AI providers', tab: 'ai' },
   { label: 'AI presets', tab: 'ai' },
+  { label: 'Preset per feature (chat, editor, Book Creator)', tab: 'ai', anchor: 'setting-feature-presets' },
   { label: 'Manuscript typeface', tab: 'appearance' },
   { label: 'Focus mode · typewriter scrolling', tab: 'appearance' },
   { label: 'Focus mode · dim other paragraphs', tab: 'appearance' },
@@ -114,6 +124,8 @@ export function SettingsHome() {
   const [validating, setValidating] = useState<string | null>(null)
   const [validationResult, setValidationResult] = useState<Record<string, 'ok' | 'error'>>({})
 
+  const featurePresets = usePreferencesStore((s) => s.featurePresets)
+  const setFeaturePreset = usePreferencesStore((s) => s.setFeaturePreset)
   const [presetFormOpen, setPresetFormOpen] = useState(false)
   const [editingPreset, setEditingPreset] = useState<AiPreset | undefined>(undefined)
   const [presetFormKey, setPresetFormKey] = useState(0)
@@ -360,6 +372,44 @@ export function SettingsHome() {
                   )
                 })}
               </div>
+
+              {presets.length > 0 && (
+                <div id="setting-feature-presets" className="mt-6 space-y-3 border-t border-border pt-5">
+                  <div>
+                    <h3 className="text-sm font-semibold">Which preset each feature starts from</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Chat can run warmer than outline generation. Anything left on the global
+                      default follows whichever preset is starred.
+                    </p>
+                  </div>
+                  {(['editorActions', 'chat', 'bookCreator'] as AiFeature[]).map((feature) => (
+                    <div key={feature} className="flex items-center justify-between gap-3">
+                      <span className="text-sm">{AI_FEATURE_LABEL[feature]}</span>
+                      <Select
+                        value={featurePresets[feature] ?? 'global'}
+                        onValueChange={(v) => setFeaturePreset(feature, v === 'global' ? null : v)}
+                      >
+                        <SelectTrigger
+                          className="w-56"
+                          aria-label={`Preset for ${AI_FEATURE_LABEL[feature]}`}
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="global">
+                            Global default ({presetForFeature(presets, feature, {})?.name ?? 'none'})
+                          </SelectItem>
+                          {presets.map((preset) => (
+                            <SelectItem key={preset.id} value={preset.id}>
+                              {preset.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
           </TabsContent>
 

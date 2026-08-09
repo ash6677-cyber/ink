@@ -30,6 +30,8 @@ import {
 } from '@/features/editor/lib/ai-insert'
 import { AiFailureNotice } from '@/components/common/ai-failure-notice'
 import { ContextPreview } from '@/components/common/context-preview'
+import { presetForFeature } from '@/lib/ai/feature-preset'
+import { usePreferencesStore } from '@/stores/preferences-store'
 import { buildPrompt } from '@/lib/ai/prompt-builder'
 import { resolveProvider } from '@/lib/ai/resolve-provider'
 import { useAiGeneration } from '@/lib/ai/use-ai-generation'
@@ -68,7 +70,10 @@ export function AiAssistantPanel({ scene, editor, codexEntries, pov, tense, onCl
 
   const [action, setAction] = useState<AiActionKind>('continue')
   const [instruction, setInstruction] = useState('')
-  const [presetId, setPresetId] = useState(presets.find((p) => p.isDefault)?.id ?? presets[0]?.id ?? '')
+  const featurePresets = usePreferencesStore((s) => s.featurePresets)
+  const [presetId, setPresetId] = useState(
+    presetForFeature(presets, 'editorActions', featurePresets)?.id ?? '',
+  )
   const [showContext, setShowContext] = useState(false)
   const [capturedRange, setCapturedRange] = useState<EditorRange | null>(null)
   const [capturedText, setCapturedText] = useState('')

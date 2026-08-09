@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 import { DEFAULT_EDITOR_FONT_ID } from '@/lib/editor/fonts'
+import type { AiFeature, FeaturePresetMap } from '@/lib/ai/feature-preset'
 import {
   applyShortcutOverrides,
   type ShortcutId,
@@ -28,9 +29,13 @@ interface PreferencesState {
   shortcutOverrides: ShortcutOverrides
   /** How long the editor waits after the last keystroke before saving. */
   autosaveDelayMs: number
+  /** Per-feature AI preset choices; a feature not in the map follows the
+   * global default preset. */
+  featurePresets: FeaturePresetMap
   setEditorFont: (id: string) => void
   setShortcutOverride: (id: ShortcutId, combo: string) => void
   setAutosaveDelayMs: (ms: number) => void
+  setFeaturePreset: (feature: AiFeature, presetId: string | null) => void
   clearShortcutOverride: (id: ShortcutId) => void
   setTypewriterMode: (value: boolean) => void
   setDimInactiveParagraphs: (value: boolean) => void
@@ -52,8 +57,16 @@ export const usePreferencesStore = create<PreferencesState>()(
       sampleBookOffered: false,
       shortcutOverrides: {},
       autosaveDelayMs: 800,
+      featurePresets: {},
       setEditorFont: (id) => set({ editorFont: id }),
       setAutosaveDelayMs: (ms) => set({ autosaveDelayMs: Math.min(5000, Math.max(200, ms)) }),
+      setFeaturePreset: (feature, presetId) =>
+        set((s) => {
+          const next = { ...s.featurePresets }
+          if (presetId) next[feature] = presetId
+          else delete next[feature]
+          return { featurePresets: next }
+        }),
       setShortcutOverride: (id, combo) =>
         set((s) => {
           const next = { ...s.shortcutOverrides, [id]: combo }

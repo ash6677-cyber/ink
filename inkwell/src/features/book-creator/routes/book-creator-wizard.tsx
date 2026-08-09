@@ -1,3 +1,5 @@
+import { presetForFeature } from '@/lib/ai/feature-preset'
+import { usePreferencesStore } from '@/stores/preferences-store'
 import { ArrowLeft, ArrowRight, FastForward, Loader2, RotateCcw, Sparkles, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -96,7 +98,8 @@ export function BookCreatorWizard() {
     void loadTemplates()
   }, [loadTemplates])
 
-  const preset = presets.find((p) => p.isDefault) ?? presets[0]
+  const featurePresets = usePreferencesStore((s) => s.featurePresets)
+  const preset = presetForFeature(presets, 'bookCreator', featurePresets)
   // Any working key, not only the one this preset names. See resolve-provider.
   const provider = resolveProvider(preset, providers)?.provider
   const aiAvailable = Boolean(preset && provider)

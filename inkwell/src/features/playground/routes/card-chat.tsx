@@ -1,3 +1,5 @@
+import { presetForFeature } from '@/lib/ai/feature-preset'
+import { usePreferencesStore } from '@/stores/preferences-store'
 import {
   ArrowLeft,
   BookMarked,
@@ -148,10 +150,12 @@ export function CardChat() {
   const { output, streaming, failure, attempt, generate, stop, reset } = useAiGeneration()
 
   const persona = personas.find((p) => p.id === activeChat?.personaId) ?? null
+  const featurePresets = usePreferencesStore((s) => s.featurePresets)
+  // A per-chat choice always wins; with none, the chat feature's own default
+  // (Settings → AI), then the global default.
   const preset =
     presets.find((p) => p.id === activeChat?.aiPresetId) ??
-    presets.find((p) => p.isDefault) ??
-    presets[0]
+    presetForFeature(presets, 'chat', featurePresets)
   // Falls back to any working key rather than only the one this preset names.
   // Every preset the app ships with starts pointing at nothing, so the strict
   // version meant a writer could add a key and still get silence.
@@ -434,7 +438,7 @@ export function CardChat() {
             </Select>
             {presets.length > 0 && (
               <Select
-                value={activeChat.aiPresetId ?? presets.find((p) => p.isDefault)?.id ?? presets[0]?.id ?? ''}
+                value={activeChat.aiPresetId ?? presetForFeature(presets, 'chat', featurePresets)?.id ?? ''}
                 onValueChange={(v) => setPresetId(activeChat.id, v)}
               >
                 <SelectTrigger className="hidden h-8 w-36 text-xs lg:flex">
@@ -693,7 +697,7 @@ export function CardChat() {
                 <div className="grid gap-1.5">
                   <Label>AI preset</Label>
                   <Select
-                    value={activeChat.aiPresetId ?? presets.find((p) => p.isDefault)?.id ?? presets[0]?.id ?? ''}
+                    value={activeChat.aiPresetId ?? presetForFeature(presets, 'chat', featurePresets)?.id ?? ''}
                     onValueChange={(v) => setPresetId(activeChat.id, v)}
                   >
                     <SelectTrigger>
