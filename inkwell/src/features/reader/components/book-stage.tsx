@@ -57,6 +57,8 @@ export function BookStage({
   author,
   projectId,
   onChapterChange,
+  initialPage,
+  onPageChange,
 }: {
   book: BookChapter[]
   title: string
@@ -67,6 +69,11 @@ export function BookStage({
   /** Fires as reading moves between chapters — the shared reader anchors
    * a beta reader's notes to wherever they currently are. */
   onChapterChange?: (chapterIndex: number) => void
+  /** Where to open — a remembered bookmark. Applied once, when the book is
+   * first typeset (it can't land before the pages are measured). */
+  initialPage?: number
+  /** Fires as the reader turns pages, for saving a bookmark. */
+  onPageChange?: (pageIndex: number) => void
 }) {
   const stageRef = useRef<HTMLDivElement | null>(null)
   const viewRef = useRef<BookViewHandle | null>(null)
@@ -140,9 +147,23 @@ export function BookStage({
   const currentChapter = here?.kind === 'chapter' ? here.chapterIndex : 0
   const progress = flatPages.length > 0 ? (pageIndex + 1) / flatPages.length : 0
 
+  // Jump to a remembered bookmark once, and only once the book has actually
+  // typeset enough pages to contain it — before that the target doesn't
+  // exist yet. A flag rather than an effect dependency so a later resize
+  // can't yank the reader back to the bookmark.
+  const [restored, setRestored] = useState(false)
+  if (!restored && ready && initialPage && initialPage > 0 && flatPages.length > initialPage) {
+    setRestored(true)
+    setPageIndex(initialPage)
+  }
+
   useEffect(() => {
     onChapterChange?.(currentChapter)
   }, [currentChapter, onChapterChange])
+
+  useEffect(() => {
+    if (ready) onPageChange?.(pageIndex)
+  }, [ready, pageIndex, onPageChange])
 
   return (
     <>

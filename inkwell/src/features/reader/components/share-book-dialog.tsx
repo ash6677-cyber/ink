@@ -1,4 +1,4 @@
-import { Check, Copy, Globe, Loader2, MessageSquare, X } from 'lucide-react'
+import { Check, Copy, Eye, Globe, Loader2, MessageSquare, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
@@ -16,9 +16,11 @@ import type { BookChapter } from '@/features/reader/lib/compile-book'
 import {
   deleteReaderNote,
   fetchReaderNotes,
+  fetchSharePulse,
   publishShare,
   revokeShare,
   type ReaderNote,
+  type SharePulse,
 } from '@/features/reader/lib/share-actions'
 import { shareUrl } from '@/features/reader/lib/share-book'
 import { totalWordCount } from '@/features/reader/lib/compile-book'
@@ -46,6 +48,7 @@ export function ShareBookDialog({
   const [working, setWorking] = useState<'publish' | 'revoke' | null>(null)
   const [copied, setCopied] = useState(false)
   const [notes, setNotes] = useState<ReaderNote[] | null>(null)
+  const [pulse, setPulse] = useState<SharePulse | null>(null)
 
   const shared = Boolean(project.shareId)
   const words = totalWordCount(book)
@@ -59,6 +62,7 @@ export function ShareBookDialog({
   if (loadedKey !== notesKey) {
     setLoadedKey(notesKey)
     setNotes(null)
+    setPulse(null)
   }
   useEffect(() => {
     if (!notesKey) return
@@ -69,6 +73,13 @@ export function ShareBookDialog({
       })
       .catch(() => {
         if (!cancelled) setNotes([])
+      })
+    fetchSharePulse(notesKey)
+      .then((p) => {
+        if (!cancelled) setPulse(p)
+      })
+      .catch(() => {
+        if (!cancelled) setPulse(null)
       })
     return () => {
       cancelled = true
@@ -154,6 +165,13 @@ export function ShareBookDialog({
               The link is the key: anyone holding it can read. Updating keeps the same link;
               stopping kills it everywhere at once.
             </p>
+            {pulse && pulse.opens > 0 && (
+              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Eye className="size-3.5" />
+                Opened {pulse.opens} {pulse.opens === 1 ? 'time' : 'times'}
+                {pulse.lastOpenedAt && <> · last {new Date(pulse.lastOpenedAt).toLocaleDateString()}</>}
+              </p>
+            )}
           </div>
         )}
 

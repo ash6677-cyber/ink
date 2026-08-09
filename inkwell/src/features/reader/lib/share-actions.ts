@@ -60,8 +60,12 @@ export async function revokeShare(project: Project): Promise<void> {
   for (let i = 0; i < count; i++) {
     await fs.deleteDoc(fs.doc(db, 'shares', project.shareId, 'chapters', String(i)))
   }
-  const notes = await fs.getDocs(fs.collection(db, 'shares', project.shareId, 'comments'))
+  const notes = await fs.getDocsFromServer(fs.collection(db, 'shares', project.shareId, 'comments'))
   for (const doc of notes.docs) {
+    await fs.deleteDoc(doc.ref)
+  }
+  const pings = await fs.getDocsFromServer(fs.collection(db, 'shares', project.shareId, 'pulse'))
+  for (const doc of pings.docs) {
     await fs.deleteDoc(doc.ref)
   }
   await fs.deleteDoc(fs.doc(db, 'shares', project.shareId))
@@ -104,4 +108,22 @@ export async function fetchReaderNotes(shareId: string): Promise<ReaderNote[]> {
 export async function deleteReaderNote(shareId: string, noteId: string): Promise<void> {
   const { fs, db } = await deps()
   await fs.deleteDoc(fs.doc(db, 'shares', shareId, 'comments', noteId))
+}
+
+export interface SharePulse {
+  opens: number
+  lastOpenedAt: number | null
+}
+
+/** How often the shared book has been opened, and when last. Server-read
+ * for the same reason as the notes: pings arrive from outside this SDK. */
+export async function fetchSharePulse(shareId: string): Promise<SharePulse> {
+  const { fs, db } = await deps()
+  const snapshot = await fs.getDocsFromServer(fs.collection(db, 'shares', shareId, 'pulse'))
+  let last = 0
+  for (const doc of snapshot.docs) {
+    const at = Number(doc.data().at ?? 0)
+    if (at > last) last = at
+  }
+  return { opens: snapshot.size, lastOpenedAt: last > 0 ? last : null }
 }

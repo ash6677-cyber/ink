@@ -288,6 +288,48 @@ await R.page.getByLabel('Your note').fill('A second note, destined for the sweep
 await R.page.getByRole('button', { name: 'Send note' }).click()
 await eventually(async () => (await R.page.getByText('Note sent to the author').count()) > 0)
 
+// ── The pulse: the book was opened, and when — never who ────────────────────
+// The reader's visit above should already have pinged. The writer sees it.
+await W.page.keyboard.press('Escape')
+await eventually(async () => (await W.page.getByRole('dialog').count()) === 0)
+await W.page.getByRole('button', { name: 'Share' }).click()
+const pulseShown = await eventually(async () => (await W.page.getByText(/Opened \d+ time/).count()) > 0)
+check('the writer sees the share has been opened', true, pulseShown)
+
+const anonPulseList = await fetch(`${FS}/shares/${shareId}/pulse`)
+check('nobody can LIST the pulse anonymously', 403, anonPulseList.status)
+const badPulse = await fetch(`${FS}/shares/${shareId}/pulse`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ fields: { at: { integerValue: '1' }, who: { stringValue: 'spy' } } }),
+})
+check('a pulse ping carrying anything but a timestamp is refused', 403, badPulse.status)
+await W.page.keyboard.press('Escape')
+
+// ── Bookmarks: the reader resumes where they left off ───────────────────────
+// Move a page or two into the book if we aren't already, then reload and
+// confirm it reopens there rather than back at the cover.
+for (let i = 0; i < 2; i++) {
+  const next = R.page.getByRole('button', { name: 'Next page' })
+  if (await next.isEnabled().catch(() => false)) {
+    await next.click()
+    await R.page.waitForTimeout(1400)
+  }
+}
+const marked = (await R.page.locator('footer').innerText()).replace(/\s+/g, ' ')
+const markedPage = Number(/page (\d+)/.exec(marked)?.[1] ?? 0)
+await R.page.reload()
+await eventually(async () => (await R.page.locator('footer').innerText().catch(() => '')).includes('page'))
+await R.page.waitForTimeout(1600)
+const afterReload = (await R.page.locator('footer').innerText()).replace(/\s+/g, ' ')
+const reopenedPage = Number(/page (\d+)/.exec(afterReload)?.[1] ?? 0)
+check(
+  'a shared book reopens where the reader left off',
+  true,
+  markedPage > 1 && reopenedPage === markedPage,
+  `left at page ${markedPage} → reopened at page ${reopenedPage}`,
+)
+
 const mistyped = await newDevice('mistyped')
 await mistyped.page.goto(`${BASE}#/shared/zzzzzzzzzzzzzzzzzzzzzz`)
 const politeNo = await eventually(
@@ -296,6 +338,11 @@ const politeNo = await eventually(
 check('a mistyped link gets a plain answer, not a spinner', true, politeNo)
 
 // ── Revoke: the link dies everywhere ─────────────────────────────────────────
+// The writer's dialog was closed during the pulse check; reopen it to revoke.
+if ((await W.page.getByRole('button', { name: 'Stop sharing' }).count()) === 0) {
+  await W.page.getByRole('button', { name: 'Share' }).click()
+  await eventually(async () => (await W.page.getByRole('button', { name: 'Stop sharing' }).count()) > 0)
+}
 await W.page.getByRole('button', { name: 'Stop sharing' }).click()
 await eventually(async () => (await W.page.getByText('the link no longer works').count()) > 0)
 
@@ -322,6 +369,10 @@ const notesLeft = await (
   })
 ).json()
 check('reader notes are swept with the revoke', 0, (notesLeft.documents ?? []).length)
+const pulseLeft = await (
+  await fetch(`${FS}/shares/${shareId}/pulse`, { headers: { Authorization: 'Bearer owner' } })
+).json()
+check('the pulse is swept with the revoke too', 0, (pulseLeft.documents ?? []).length)
 
 check(
   'the beta reader never talked to the Firebase SDK endpoints',

@@ -181,6 +181,47 @@ export interface ReaderNoteDraft {
   name: string
 }
 
+/**
+ * Drops the pulse ping for this visit: a bare timestamp, nothing else —
+ * "your book was opened", never who by. Throttled to one ping per device
+ * per hour so a reader paging back and forth doesn't read as a crowd.
+ * Fire-and-forget; a failed ping is nobody's problem.
+ */
+export function pingSharePulse(shareId: string): void {
+  if (!/^[a-z0-9]{10,40}$/.test(shareId)) return
+  const throttleKey = `inkwell-share-pulse-${shareId}`
+  try {
+    const last = Number(localStorage.getItem(throttleKey) ?? 0)
+    if (Date.now() - last < 60 * 60 * 1000) return
+    localStorage.setItem(throttleKey, String(Date.now()))
+  } catch {
+    // Storage blocked: ping anyway, just unthrottled.
+  }
+  void fetch(`${restBase()}/shares/${shareId}/pulse`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields: { at: { integerValue: String(Date.now()) } } }),
+  }).catch(() => undefined)
+}
+
+/** Where this device last left off in a shared book — remembered locally,
+ * never sent anywhere. */
+export function readSharedBookmark(shareId: string): number {
+  try {
+    return Math.max(0, Number(localStorage.getItem(`inkwell-shared-bookmark-${shareId}`) ?? 0))
+  } catch {
+    return 0
+  }
+}
+
+export function writeSharedBookmark(shareId: string, pageIndex: number): void {
+  try {
+    localStorage.setItem(`inkwell-shared-bookmark-${shareId}`, String(pageIndex))
+  } catch {
+    // Storage blocked: the reader simply starts from the cover next time.
+  }
+}
+
 /** Posts a note into the share's box. Resolves false when the box refuses —
  * link revoked, rules not yet live, or the parcel over-size. */
 export async function submitReaderNote(shareId: string, draft: ReaderNoteDraft): Promise<boolean> {

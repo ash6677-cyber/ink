@@ -9,7 +9,10 @@ import { ReaderThemeToggle } from '@/features/reader/components/reader-theme-tog
 import {
   bookFromShared,
   fetchShare,
+  pingSharePulse,
   QUOTE_MAX,
+  readSharedBookmark,
+  writeSharedBookmark,
   type FetchedShare,
 } from '@/features/reader/lib/share-book'
 import { useReaderThemeClass } from '@/features/reader/lib/use-reader-theme'
@@ -35,12 +38,19 @@ export function SharedReader() {
   useEffect(() => {
     let cancelled = false
     void fetchShare(shareId).then((result) => {
-      if (!cancelled) setShare(result)
+      if (!cancelled) {
+        setShare(result)
+        // A found book counts as an open — ping the pulse (throttled to
+        // once an hour per device inside the helper).
+        if (result.state === 'found') pingSharePulse(shareId)
+      }
     })
     return () => {
       cancelled = true
     }
   }, [shareId])
+
+  const [bookmark] = useState(() => readSharedBookmark(shareId))
 
   const book = useMemo(
     () => (share?.state === 'found' ? bookFromShared(share.chapters) : []),
@@ -117,6 +127,8 @@ export function SharedReader() {
         author={share.meta.author}
         projectId=""
         onChapterChange={setChapterIndex}
+        initialPage={bookmark}
+        onPageChange={(page) => writeSharedBookmark(shareId, page)}
       />
 
       <ReaderNoteDialog
