@@ -32,6 +32,12 @@ export interface Project extends BaseEntity {
    * use `resolveCoverArt`.
    */
   coverId: string | null
+  /** The published read-only copy's id, or absent/null when not shared.
+   * Optional-by-absence: projects made before sharing existed stay valid. */
+  shareId?: string | null
+  /** How many chapter documents the live share holds — what revoke and a
+   * shrinking re-publish must sweep. */
+  shareChapterCount?: number
   seriesId: string | null
   /**
    * Position in its series — book one, book two, and so on.

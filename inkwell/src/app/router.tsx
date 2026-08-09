@@ -21,6 +21,7 @@ import {
   SeriesDetail,
   SeriesHome,
   SettingsHome,
+  SharedReader,
   StatsHome,
 } from '@/app/lazy-routes'
 import { AppShell } from '@/app/layout/app-shell'
@@ -48,6 +49,10 @@ function screen(path: string, element: React.ReactNode) {
 // loaded as static files from a packaged desktop shell, which has no server
 // to rewrite arbitrary paths back to index.html.
 export const router = createHashRouter([
+  // The beta-reader page lives outside the shell on purpose: someone opening
+  // a share link is a guest, not a user — they get the book, not the app's
+  // nav rail, command palette, or sync machinery.
+  screen('shared/:shareId', <SharedReader />),
   {
     element: <AppShell />,
     errorElement: <RouteError />,

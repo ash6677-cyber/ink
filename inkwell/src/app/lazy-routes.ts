@@ -50,6 +50,9 @@ export const LegacyChatRedirect = lazy(() =>
 export const ReaderHome = lazy(() =>
   import('@/features/reader/routes/reader-home').then((m) => ({ default: m.ReaderHome })),
 )
+export const SharedReader = lazy(() =>
+  import('@/features/reader/routes/shared-reader').then((m) => ({ default: m.SharedReader })),
+)
 
 export const PlanningHome = lazy(() =>
   import('@/features/planning/routes/planning-home').then((m) => ({ default: m.PlanningHome })),

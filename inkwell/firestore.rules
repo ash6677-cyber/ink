@@ -11,5 +11,31 @@ service cloud.firestore {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
     }
+
+    // Published read-only copies for beta readers. The unguessable id IS the
+    // access control: anyone holding a link may GET, but nobody may LIST the
+    // collection — enumeration would turn every private share public.
+    match /shares/{shareId} {
+      allow get: if true;
+      allow list: if false;
+      // Only a signed-in owner creates a share, and only that same owner can
+      // later update or take it down.
+      allow create: if request.auth != null
+        && request.resource.data.ownerUid == request.auth.uid;
+      allow update: if request.auth != null
+        && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid == request.auth.uid;
+      allow delete: if request.auth != null
+        && resource.data.ownerUid == request.auth.uid;
+
+      match /chapters/{chapterId} {
+        // Chapter docs are only reachable through a share id someone was
+        // given, so listing within one share is as public as getting it.
+        allow get, list: if true;
+        allow write: if request.auth != null
+          && get(/databases/$(database)/documents/shares/$(shareId)).data.ownerUid
+            == request.auth.uid;
+      }
+    }
   }
 }
