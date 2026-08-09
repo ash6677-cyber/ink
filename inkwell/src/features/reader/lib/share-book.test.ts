@@ -21,7 +21,7 @@ function scene(title: string, text: string): Scene {
     content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text }] }] },
     plainText: text,
     wordCount: text.split(/\s+/).length,
-    status: 'draft',
+    status: 'drafting',
     povCharacterId: null,
     locationCodexId: null,
     summary: '',
