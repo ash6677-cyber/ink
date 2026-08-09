@@ -161,3 +161,47 @@ export async function fetchShare(shareId: string): Promise<FetchedShare> {
 export function shareUrl(shareId: string): string {
   return `${window.location.origin}${window.location.pathname}#/shared/${shareId}`
 }
+
+/* ---- reader notes -------------------------------------------------------
+   A suggestion box on the share: anyone holding the link can drop a note
+   in (create-only, validated hard by the security rules), and only the
+   book's owner can read the box. The reader's half posts through the same
+   plain REST door the book is fetched through — still zero SDK bytes. */
+
+export const NOTE_MAX = 2000
+export const QUOTE_MAX = 300
+export const NAME_MAX = 60
+
+export interface ReaderNoteDraft {
+  chapterIndex: number
+  /** The passage the note is about, if the reader selected one. */
+  quote: string
+  note: string
+  /** However the reader wants to sign it; empty is fine. */
+  name: string
+}
+
+/** Posts a note into the share's box. Resolves false when the box refuses —
+ * link revoked, rules not yet live, or the parcel over-size. */
+export async function submitReaderNote(shareId: string, draft: ReaderNoteDraft): Promise<boolean> {
+  if (!/^[a-z0-9]{10,40}$/.test(shareId)) return false
+  const body = {
+    fields: {
+      chapterIndex: { integerValue: String(Math.max(0, Math.floor(draft.chapterIndex))) },
+      quote: { stringValue: draft.quote.slice(0, QUOTE_MAX) },
+      note: { stringValue: draft.note.slice(0, NOTE_MAX) },
+      name: { stringValue: draft.name.slice(0, NAME_MAX) },
+      createdAt: { integerValue: String(Date.now()) },
+    },
+  }
+  try {
+    const res = await fetch(`${restBase()}/shares/${shareId}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    return res.ok
+  } catch {
+    return false
+  }
+}

@@ -466,3 +466,10 @@
   text-transform: uppercase;
   opacity: 0.7;
 }
+
+/* Beta readers may select prose to quote it in a note. Only on the shared
+   page: in the writer's own reader, selection would fight the drag-to-turn
+   gesture for no benefit. */
+.book-reader-shared .book-stage {
+  user-select: text;
+}

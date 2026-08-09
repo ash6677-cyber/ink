@@ -51,7 +51,8 @@ export async function publishShare(project: Project, book: BookChapter[]): Promi
   return shareId
 }
 
-/** Takes the copy down. The local book is untouched; only the share dies. */
+/** Takes the copy down. The local book is untouched; only the share dies —
+ * chapters, reader notes and all. */
 export async function revokeShare(project: Project): Promise<void> {
   if (!project.shareId) return
   const { fs, db } = await deps()
@@ -59,6 +60,48 @@ export async function revokeShare(project: Project): Promise<void> {
   for (let i = 0; i < count; i++) {
     await fs.deleteDoc(fs.doc(db, 'shares', project.shareId, 'chapters', String(i)))
   }
+  const notes = await fs.getDocs(fs.collection(db, 'shares', project.shareId, 'comments'))
+  for (const doc of notes.docs) {
+    await fs.deleteDoc(doc.ref)
+  }
   await fs.deleteDoc(fs.doc(db, 'shares', project.shareId))
   await projectRepo.update(project.id, { shareId: null, shareChapterCount: 0 })
+}
+
+export interface ReaderNote {
+  id: string
+  chapterIndex: number
+  quote: string
+  note: string
+  name: string
+  createdAt: number
+}
+
+/** The suggestion box, newest first. Owner-only by rule.
+ *
+ * `getDocsFromServer`, not `getDocs`: reader notes are written by strangers
+ * over plain REST, so they never pass through this SDK's IndexedDB cache.
+ * A cache-first read returns an empty box every time — the notes are on the
+ * server and nowhere the cache has looked. */
+export async function fetchReaderNotes(shareId: string): Promise<ReaderNote[]> {
+  const { fs, db } = await deps()
+  const snapshot = await fs.getDocsFromServer(fs.collection(db, 'shares', shareId, 'comments'))
+  return snapshot.docs
+    .map((doc) => {
+      const data = doc.data()
+      return {
+        id: doc.id,
+        chapterIndex: Number(data.chapterIndex ?? 0),
+        quote: String(data.quote ?? ''),
+        note: String(data.note ?? ''),
+        name: String(data.name ?? ''),
+        createdAt: Number(data.createdAt ?? 0),
+      }
+    })
+    .sort((a, b) => b.createdAt - a.createdAt)
+}
+
+export async function deleteReaderNote(shareId: string, noteId: string): Promise<void> {
+  const { fs, db } = await deps()
+  await fs.deleteDoc(fs.doc(db, 'shares', shareId, 'comments', noteId))
 }

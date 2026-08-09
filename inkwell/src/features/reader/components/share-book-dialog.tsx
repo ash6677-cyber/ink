@@ -1,5 +1,5 @@
-import { Check, Copy, Globe, Loader2 } from 'lucide-react'
-import { useState } from 'react'
+import { Check, Copy, Globe, Loader2, MessageSquare, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -13,7 +13,13 @@ import {
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/components/ui/use-toast'
 import type { BookChapter } from '@/features/reader/lib/compile-book'
-import { publishShare, revokeShare } from '@/features/reader/lib/share-actions'
+import {
+  deleteReaderNote,
+  fetchReaderNotes,
+  publishShare,
+  revokeShare,
+  type ReaderNote,
+} from '@/features/reader/lib/share-actions'
 import { shareUrl } from '@/features/reader/lib/share-book'
 import { totalWordCount } from '@/features/reader/lib/compile-book'
 import type { Project } from '@/types'
@@ -39,9 +45,45 @@ export function ShareBookDialog({
   const { toast } = useToast()
   const [working, setWorking] = useState<'publish' | 'revoke' | null>(null)
   const [copied, setCopied] = useState(false)
+  const [notes, setNotes] = useState<ReaderNote[] | null>(null)
 
   const shared = Boolean(project.shareId)
   const words = totalWordCount(book)
+
+  // The suggestion box empties onto the desk whenever the dialog opens on
+  // a live share. Failure is quiet — the box simply shows as unavailable.
+  // The reset happens during render (house pattern); the effect only
+  // subscribes to the fetch.
+  const notesKey = open && project.shareId ? project.shareId : ''
+  const [loadedKey, setLoadedKey] = useState('')
+  if (loadedKey !== notesKey) {
+    setLoadedKey(notesKey)
+    setNotes(null)
+  }
+  useEffect(() => {
+    if (!notesKey) return
+    let cancelled = false
+    fetchReaderNotes(notesKey)
+      .then((fetched) => {
+        if (!cancelled) setNotes(fetched)
+      })
+      .catch(() => {
+        if (!cancelled) setNotes([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [notesKey])
+
+  async function handleDeleteNote(noteId: string) {
+    if (!project.shareId) return
+    setNotes((current) => current?.filter((n) => n.id !== noteId) ?? null)
+    try {
+      await deleteReaderNote(project.shareId, noteId)
+    } catch {
+      toast({ title: 'Could not delete the note', variant: 'destructive' })
+    }
+  }
 
   async function handlePublish() {
     setWorking('publish')
@@ -112,6 +154,50 @@ export function ShareBookDialog({
               The link is the key: anyone holding it can read. Updating keeps the same link;
               stopping kills it everywhere at once.
             </p>
+          </div>
+        )}
+
+        {shared && notes !== null && (
+          <div className="space-y-2">
+            <p className="flex items-center gap-1.5 text-sm font-medium">
+              <MessageSquare className="size-3.5" /> Reader notes
+              <span className="text-muted-foreground">({notes.length})</span>
+            </p>
+            {notes.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                None yet. Readers can leave you notes from the shared page.
+              </p>
+            ) : (
+              <ul className="max-h-56 space-y-2 overflow-y-auto pr-1">
+                {notes.map((n) => (
+                  <li key={n.id} className="rounded-md border border-border bg-muted/40 p-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 space-y-1">
+                        {n.quote && (
+                          <p className="truncate text-xs italic text-muted-foreground">
+                            “{n.quote}”
+                          </p>
+                        )}
+                        <p className="whitespace-pre-wrap text-sm">{n.note}</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {n.name || 'Anonymous'} · {book[n.chapterIndex]?.title ?? 'Unknown chapter'}
+                          {n.createdAt > 0 && <> · {new Date(n.createdAt).toLocaleDateString()}</>}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-6 shrink-0"
+                        aria-label="Delete this note"
+                        onClick={() => void handleDeleteNote(n.id)}
+                      >
+                        <X className="size-3.5" />
+                      </Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         )}
 

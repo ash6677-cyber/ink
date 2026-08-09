@@ -56,6 +56,7 @@ export function BookStage({
   title,
   author,
   projectId,
+  onChapterChange,
 }: {
   book: BookChapter[]
   title: string
@@ -63,6 +64,9 @@ export function BookStage({
   /** Used only to look up a local cover for the front page; a shared book
    * passes '' and gets the plain title page. */
   projectId: string
+  /** Fires as reading moves between chapters — the shared reader anchors
+   * a beta reader's notes to wherever they currently are. */
+  onChapterChange?: (chapterIndex: number) => void
 }) {
   const stageRef = useRef<HTMLDivElement | null>(null)
   const viewRef = useRef<BookViewHandle | null>(null)
@@ -135,6 +139,10 @@ export function BookStage({
   const here = flatPages[pageIndex]
   const currentChapter = here?.kind === 'chapter' ? here.chapterIndex : 0
   const progress = flatPages.length > 0 ? (pageIndex + 1) / flatPages.length : 0
+
+  useEffect(() => {
+    onChapterChange?.(currentChapter)
+  }, [currentChapter, onChapterChange])
 
   return (
     <>

@@ -1,10 +1,17 @@
-import { BookX, Feather } from 'lucide-react'
+import { BookX, Feather, MessageSquarePlus } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 
+import { Button } from '@/components/ui/button'
 import { BookStage } from '@/features/reader/components/book-stage'
+import { ReaderNoteDialog } from '@/features/reader/components/reader-note-dialog'
 import { ReaderThemeToggle } from '@/features/reader/components/reader-theme-toggle'
-import { bookFromShared, fetchShare, type FetchedShare } from '@/features/reader/lib/share-book'
+import {
+  bookFromShared,
+  fetchShare,
+  QUOTE_MAX,
+  type FetchedShare,
+} from '@/features/reader/lib/share-book'
 import { useReaderThemeClass } from '@/features/reader/lib/use-reader-theme'
 import { cn } from '@/lib/utils'
 
@@ -21,6 +28,9 @@ export function SharedReader() {
   const { shareId = '' } = useParams()
   const [share, setShare] = useState<FetchedShare | null>(null)
   const readerThemeClass = useReaderThemeClass()
+  const [chapterIndex, setChapterIndex] = useState(0)
+  const [noteOpen, setNoteOpen] = useState(false)
+  const [noteQuote, setNoteQuote] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -67,7 +77,7 @@ export function SharedReader() {
   return (
     <div
       className={cn(
-        'book-reader flex h-dvh flex-col bg-gradient-to-b from-background to-muted/30',
+        'book-reader book-reader-shared flex h-dvh flex-col bg-gradient-to-b from-background to-muted/30',
         readerThemeClass,
       )}
     >
@@ -79,14 +89,44 @@ export function SharedReader() {
           )}
         </div>
         <div className="flex shrink-0 items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              // Whatever the reader had selected on the page rides along as
+              // the quote — where selection works; the field is editable
+              // either way.
+              setNoteQuote(
+                (window.getSelection()?.toString() ?? '').trim().slice(0, QUOTE_MAX),
+              )
+              setNoteOpen(true)
+            }}
+          >
+            <MessageSquarePlus className="size-3.5" /> Leave a note
+          </Button>
           <ReaderThemeToggle />
-          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <p className="flex items-center gap-1.5 text-xs text-muted-foreground max-sm:hidden">
             <Feather className="size-3.5" aria-hidden /> Shared from INKWELL
           </p>
         </div>
       </header>
 
-      <BookStage book={book} title={share.meta.title} author={share.meta.author} projectId="" />
+      <BookStage
+        book={book}
+        title={share.meta.title}
+        author={share.meta.author}
+        projectId=""
+        onChapterChange={setChapterIndex}
+      />
+
+      <ReaderNoteDialog
+        open={noteOpen}
+        onOpenChange={setNoteOpen}
+        shareId={shareId}
+        chapterIndex={chapterIndex}
+        chapterTitle={book[chapterIndex]?.title ?? ''}
+        initialQuote={noteQuote}
+      />
     </div>
   )
 }

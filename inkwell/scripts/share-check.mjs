@@ -164,6 +164,7 @@ await W.page.getByRole('button', { name: 'Update the copy' }).click()
 await eventually(async () => (await W.page.getByText('Shared copy updated').count()) > 0)
 const linkAfter = await W.page.getByRole('textbox', { name: 'The share link' }).inputValue()
 check('updating keeps the exact same link', linkBefore, linkAfter)
+await W.page.keyboard.press('Escape')
 
 await R.page.reload()
 await eventually(async () => (await R.page.getByRole('button', { name: 'Next page' }).count()) > 0)
@@ -217,6 +218,76 @@ const foreignWrite = await fetch(`${FS}/shares/${shareId}`, {
 })
 check('a different signed-in account cannot touch the share either', 403, foreignWrite.status)
 
+// ── Reader notes: a suggestion box, not a forum ─────────────────────────────
+await R.page.getByRole('button', { name: 'Leave a note' }).click()
+await R.page.getByLabel('Your note').fill('The lighthouse ledger gave me chills. More Marta, please.')
+await R.page.getByLabel(/Your name/).fill('Beta Bee')
+await R.page.getByRole('button', { name: 'Send note' }).click()
+const noteSent = await eventually(
+  async () => (await R.page.getByText('Note sent to the author').count()) > 0,
+)
+check('a beta reader leaves a note through the real dialog', true, noteSent)
+
+// The rules around the box, probed raw: strangers can drop notes in but
+// never read, list, or slip in a malformed parcel.
+const anonNoteList = await fetch(`${FS}/shares/${shareId}/comments`)
+check('nobody can LIST the notes anonymously', 403, anonNoteList.status)
+
+const oversize = await fetch(`${FS}/shares/${shareId}/comments`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    fields: {
+      chapterIndex: { integerValue: '0' },
+      quote: { stringValue: '' },
+      note: { stringValue: 'x'.repeat(2500) },
+      name: { stringValue: '' },
+      createdAt: { integerValue: String(Date.now()) },
+    },
+  }),
+})
+check('an over-size note is refused at the door', 403, oversize.status)
+
+const wrongShape = await fetch(`${FS}/shares/${shareId}/comments`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    fields: {
+      note: { stringValue: 'sneaky' },
+      chapterIndex: { integerValue: '0' },
+      quote: { stringValue: '' },
+      name: { stringValue: '' },
+      createdAt: { integerValue: String(Date.now()) },
+      admin: { booleanValue: true },
+    },
+  }),
+})
+check('a parcel with extra fields is refused', 403, wrongShape.status)
+
+// The writer finds the note waiting in the Share dialog, and can bin it.
+// Make sure the dialog is fully closed first, so reopening is a real
+// open→fetch cycle rather than a no-op on an already-open dialog.
+await W.page.keyboard.press('Escape')
+await eventually(async () => (await W.page.getByRole('dialog').count()) === 0)
+await W.page.getByRole('button', { name: 'Share' }).click()
+const noteArrived = await eventually(
+  async () => (await W.page.getByText('More Marta, please.').count()) > 0,
+)
+check('the writer finds the note in the Share dialog', true, noteArrived)
+check('…signed by its reader', true, (await W.page.getByText('Beta Bee').count()) > 0)
+
+await W.page.getByRole('button', { name: 'Delete this note' }).first().click()
+const noteGone = await eventually(
+  async () => (await W.page.getByText('More Marta, please.').count()) === 0,
+)
+check('…and can delete it', true, noteGone)
+
+// Leave one more note in the box so revoke has something to sweep.
+await R.page.getByRole('button', { name: 'Leave a note' }).click()
+await R.page.getByLabel('Your note').fill('A second note, destined for the sweep.')
+await R.page.getByRole('button', { name: 'Send note' }).click()
+await eventually(async () => (await R.page.getByText('Note sent to the author').count()) > 0)
+
 const mistyped = await newDevice('mistyped')
 await mistyped.page.goto(`${BASE}#/shared/zzzzzzzzzzzzzzzzzzzzzz`)
 const politeNo = await eventually(
@@ -242,6 +313,15 @@ check(
   0,
   (chaptersLeft.documents ?? []).length,
 )
+// Notes can't be listed anonymously even post-mortem, so the sweep is
+// verified with the emulator's owner bypass — the same all-seeing eye the
+// sync harness uses.
+const notesLeft = await (
+  await fetch(`${FS}/shares/${shareId}/comments`, {
+    headers: { Authorization: 'Bearer owner' },
+  })
+).json()
+check('reader notes are swept with the revoke', 0, (notesLeft.documents ?? []).length)
 
 check(
   'the beta reader never talked to the Firebase SDK endpoints',
