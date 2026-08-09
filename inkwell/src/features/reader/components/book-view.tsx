@@ -4,6 +4,7 @@ import { ChapterContent } from '@/features/reader/components/chapter-content'
 import { CurlLeaf, type CurlHandle } from '@/features/reader/components/curl-leaf'
 import { PageSurface, type PageMetrics } from '@/features/reader/components/page-surface'
 import type { BookChapter } from '@/features/reader/lib/compile-book'
+import { SEGMENT_COUNT } from '@/features/reader/lib/curl-geometry'
 import { criticalDamping, isSpringAtRest, stepSpring } from '@/features/reader/lib/spring'
 import { cn } from '@/lib/utils'
 import { FrontPage } from '@/features/reader/components/front-page'
@@ -467,6 +468,13 @@ export const BookView = forwardRef<
             ref={curlRef}
             width={metrics.width}
             height={metrics.height}
+            // One page on screen means no facing page for a spine-pivoted
+            // sheet to land on — the whole second half of that turn happens
+            // off-screen. Single-column mode therefore flips a flat sheet
+            // about its own centre, every frame on the reader's page, on
+            // every engine. The full segmented bend belongs to the spread.
+            count={columns === 1 ? 1 : SEGMENT_COUNT}
+            centerPivot={columns === 1}
             front={
               <>
                 {renderPage(turn.frontPage, 'right')}

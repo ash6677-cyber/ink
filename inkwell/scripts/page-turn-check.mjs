@@ -223,17 +223,39 @@ check(
   underneath.includes('Chapter 1'),
   underneath.slice(0, 40),
 )
-const inFlightBounds = await page.evaluate(() => {
-  const leaf = document.querySelector('.curl-leaf')
-  if (!leaf) return null
-  const r = leaf.getBoundingClientRect()
-  return { spillsRight: r.right > window.innerWidth * 1.35, spillsLeft: r.left < -window.innerWidth * 0.35 }
-})
+// Sampled across the WHOLE turn, not one early frame: the field bug was a
+// spine-pivoted flip whose entire second half swung off the left of the
+// screen — "off centre, half of it not visible". Centre-pivoted, every
+// frame must stay on the page's own footprint.
+const flightSamples = []
+for (let i = 0; i < 14; i++) {
+  const sample = await page.evaluate(() => {
+    const leaf = document.querySelector('.curl-leaf')
+    if (!leaf) return null
+    const r = leaf.getBoundingClientRect()
+    return { left: Math.round(r.left), right: Math.round(r.right), width: window.innerWidth }
+  })
+  if (sample) flightSamples.push(sample)
+  await page.waitForTimeout(60)
+}
+const offStage = flightSamples.filter(
+  (s) => s.left < -40 || s.right > s.width + 40,
+)
 check(
-  'the turning sheet stays roughly on stage instead of ballooning away',
+  'every sampled frame of the phone turn stays on screen',
+  0,
+  offStage.length,
+  `${flightSamples.length} frames sampled, worst: ${JSON.stringify(offStage[0] ?? null)}`,
+)
+check(
+  'the phone sheet pivots about its own centre',
   true,
-  inFlightBounds === null || (!inFlightBounds.spillsRight && !inFlightBounds.spillsLeft),
-  JSON.stringify(inFlightBounds),
+  await page.evaluate(() => {
+    const seg = document.querySelector('.curl-segment')
+    if (!seg) return true // already settled — the samples above cover it
+    const origin = parseFloat(getComputedStyle(seg).transformOrigin)
+    return origin > seg.getBoundingClientRect().width * 0.4
+  }),
 )
 await page.waitForTimeout(1400)
 check(

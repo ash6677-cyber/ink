@@ -1,6 +1,6 @@
 import { forwardRef, useImperativeHandle, useMemo, useRef, type ReactNode } from 'react'
 
-import { computeCurl, SEGMENT_COUNT, seamOverlap } from '@/features/reader/lib/curl-geometry'
+import { computeCurl, seamOverlap } from '@/features/reader/lib/curl-geometry'
 
 export interface CurlHandle {
   setProgress: (progress: number) => void
@@ -9,6 +9,18 @@ export interface CurlHandle {
 interface CurlLeafProps {
   width: number
   height: number
+  /** How many hinged segments to cut the sheet into. One means a flat flip. */
+  count: number
+  /**
+   * Rotate the sheet about its own centre instead of the spine edge.
+   *
+   * A spine-edge pivot is right for a two-page spread — the sheet lands on
+   * the facing page. On a single-page screen there IS no facing page, so a
+   * spine pivot swings the entire second half of the turn off-screen: the
+   * reader watches half a flip and then nothing. Centre pivot keeps every
+   * frame of the turn on the page's own footprint.
+   */
+  centerPivot: boolean
   /** Recto — the face lying to the right of the spine at rest. */
   front: ReactNode
   /** Verso — the reverse, which comes to rest on the left. */
@@ -28,7 +40,7 @@ interface CurlLeafProps {
  * warping it, so nothing is resampled and nothing softens at high DPI.
  */
 export const CurlLeaf = forwardRef<CurlHandle, CurlLeafProps>(function CurlLeaf(
-  { width, height, front, back },
+  { width, height, count, centerPivot, front, back },
   ref,
 ) {
   const segmentRefs = useRef<(HTMLDivElement | null)[]>([])
@@ -37,16 +49,16 @@ export const CurlLeaf = forwardRef<CurlHandle, CurlLeafProps>(function CurlLeaf(
   const frontSheenRefs = useRef<(HTMLDivElement | null)[]>([])
   const backSheenRefs = useRef<(HTMLDivElement | null)[]>([])
 
-  const segmentWidth = width / SEGMENT_COUNT
-  const overlap = seamOverlap(segmentWidth, SEGMENT_COUNT)
-  const indices = useMemo(() => Array.from({ length: SEGMENT_COUNT }, (_, index) => index), [])
+  const segmentWidth = width / count
+  const overlap = seamOverlap(segmentWidth, count)
+  const indices = useMemo(() => Array.from({ length: count }, (_, index) => index), [count])
 
   useImperativeHandle(
     ref,
     () => ({
       setProgress(progress: number) {
-        const segments = computeCurl(progress, width, SEGMENT_COUNT)
-        for (let i = 0; i < SEGMENT_COUNT; i++) {
+        const segments = computeCurl(progress, width, count)
+        for (let i = 0; i < count; i++) {
           const segment = segments[i]
 
           const node = segmentRefs.current[i]
@@ -75,7 +87,7 @@ export const CurlLeaf = forwardRef<CurlHandle, CurlLeafProps>(function CurlLeaf(
         }
       },
     }),
-    [width],
+    [width, count],
   )
 
   return (
@@ -87,7 +99,11 @@ export const CurlLeaf = forwardRef<CurlHandle, CurlLeafProps>(function CurlLeaf(
             segmentRefs.current[i] = node
           }}
           className="curl-segment"
-          style={{ width: segmentWidth + overlap, height }}
+          style={{
+            width: segmentWidth + overlap,
+            height,
+            ...(centerPivot ? { transformOrigin: '50% 50%' } : {}),
+          }}
         >
           <div className="curl-face curl-face-front">
             <div
@@ -117,7 +133,7 @@ export const CurlLeaf = forwardRef<CurlHandle, CurlLeafProps>(function CurlLeaf(
                 width,
                 // Counted from the sheet's free edge: flipping the sheet
                 // reverses which end of the verso meets the spine.
-                transform: `translateX(${-(SEGMENT_COUNT - 1 - i) * segmentWidth}px)`,
+                transform: `translateX(${-(count - 1 - i) * segmentWidth}px)`,
               }}
             >
               {back}

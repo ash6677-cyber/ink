@@ -29,11 +29,14 @@ const isWebKit =
   !/Chrome\/|Chromium\/|Edg\//.test(navigator.userAgent)
 
 /**
- * Segments across the sheet. Eighteen is where the arc stops looking
- * faceted without losing frame-time headroom — but on WebKit the sheet
- * degrades to ONE segment: the bend flattens into a clean single-plane
- * flip (same spring, same faces, same shading), which is the one 3D
- * pattern that engine composites reliably.
+ * Segments across the two-page spread's sheet. Eighteen is where the arc
+ * stops looking faceted without losing frame-time headroom — but on WebKit
+ * the sheet degrades to ONE segment: the bend flattens into a clean
+ * single-plane flip (same spring, same faces, same shading), which is the
+ * one 3D pattern that engine composites reliably.
+ *
+ * Single-column mode ignores this and always uses one centre-pivoted
+ * segment on every engine — see CurlLeaf for why.
  */
 export const SEGMENT_COUNT = isWebKit ? 1 : 18
 

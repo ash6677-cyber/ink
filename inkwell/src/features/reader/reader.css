@@ -63,13 +63,11 @@
   cursor: grabbing;
 }
 
-/* One page, one screen: the sheet pivots at the screen's left edge, so at
-   mid-turn it points straight at the viewer. Under the two-page spread's
-   close perspective it balloons past the screen edges — a longer viewing
-   distance and an origin over the pivot keep the whole turn on stage. */
+/* One page, one screen: the sheet flips about its own centre (see
+   CurlLeaf's centerPivot), so the projection stays centred too. A longer
+   viewing distance keeps the mid-turn sheet from swelling. */
 .book-stage-single {
   perspective: 3600px;
-  perspective-origin: 10% 45%;
 }
 
 .book-side {
