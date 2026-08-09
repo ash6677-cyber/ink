@@ -5,6 +5,7 @@ import { CodexHoverCard } from '@/features/editor/components/codex-hover-card'
 import { CodexHighlight, setCodexHighlightEntries } from '@/lib/editor/codex-highlight'
 import { createProseExtensions } from '@/lib/editor/extensions'
 import { FocusDim, setFocusDimEnabled } from '@/lib/editor/focus-dim'
+import { TicHighlight, setTicHighlightWords } from '@/lib/editor/tic-highlight'
 import { findScrollParent } from '@/lib/editor/scroll-utils'
 import { cn } from '@/lib/utils'
 import { usePreferencesStore } from '@/stores/preferences-store'
@@ -60,6 +61,7 @@ export function SceneEditor({
 
   const typewriterMode = usePreferencesStore((s) => s.typewriterMode)
   const dimInactiveParagraphs = usePreferencesStore((s) => s.dimInactiveParagraphs)
+  const styleTics = usePreferencesStore((s) => s.styleTics)
   const typewriterActiveRef = useRef(false)
   useEffect(() => {
     typewriterActiveRef.current = focusMode && typewriterMode
@@ -82,7 +84,7 @@ export function SceneEditor({
 
   const editor = useEditor(
     {
-      extensions: [...createProseExtensions(), CodexHighlight, FocusDim],
+      extensions: [...createProseExtensions(), CodexHighlight, TicHighlight, FocusDim],
       content: content ?? '',
       autofocus: false,
       editorProps: {
@@ -136,6 +138,11 @@ export function SceneEditor({
     if (!editor) return
     setCodexHighlightEntries(editor, codexEntries)
   }, [editor, codexEntries])
+
+  useEffect(() => {
+    if (!editor) return
+    setTicHighlightWords(editor, styleTics)
+  }, [editor, styleTics])
 
   useEffect(() => {
     if (!editor) return

@@ -38,8 +38,12 @@ interface PreferencesState {
    * Null follows the app.
    */
   readerTheme: 'light' | 'dark' | null
+  /** The writer's personal watchlist of over-used words, highlighted in the
+   * editor. Personal, not per-project — a tic is a habit, not a book. */
+  styleTics: string[]
   setEditorFont: (id: string) => void
   setReaderTheme: (value: 'light' | 'dark' | null) => void
+  setStyleTics: (tics: string[]) => void
   setShortcutOverride: (id: ShortcutId, combo: string) => void
   setAutosaveDelayMs: (ms: number) => void
   setFeaturePreset: (feature: AiFeature, presetId: string | null) => void
@@ -66,8 +70,10 @@ export const usePreferencesStore = create<PreferencesState>()(
       autosaveDelayMs: 800,
       featurePresets: {},
       readerTheme: null,
+      styleTics: [],
       setEditorFont: (id) => set({ editorFont: id }),
       setReaderTheme: (value) => set({ readerTheme: value }),
+      setStyleTics: (tics) => set({ styleTics: tics }),
       setAutosaveDelayMs: (ms) => set({ autosaveDelayMs: Math.min(5000, Math.max(200, ms)) }),
       setFeaturePreset: (feature, presetId) =>
         set((s) => {

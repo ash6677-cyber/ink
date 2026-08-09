@@ -1,9 +1,11 @@
-import { AlignVerticalSpaceAround, Check, Focus, Save, Type } from 'lucide-react'
+import { AlignVerticalSpaceAround, Check, Focus, Save, ScanText, Type } from 'lucide-react'
 
 import { Dial } from '@/components/common/dial'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
+import { Textarea } from '@/components/ui/textarea'
 import { EDITOR_FONTS } from '@/lib/editor/fonts'
+import { parseTicList } from '@/lib/editor/style-tics'
 import { cn } from '@/lib/utils'
 import { usePreferencesStore } from '@/stores/preferences-store'
 import { ThemeSettings } from '@/features/theme/components/theme-settings'
@@ -17,6 +19,8 @@ export function AppearanceSettings() {
   const setDimInactiveParagraphs = usePreferencesStore((s) => s.setDimInactiveParagraphs)
   const autosaveDelayMs = usePreferencesStore((s) => s.autosaveDelayMs)
   const setAutosaveDelayMs = usePreferencesStore((s) => s.setAutosaveDelayMs)
+  const styleTics = usePreferencesStore((s) => s.styleTics)
+  const setStyleTics = usePreferencesStore((s) => s.setStyleTics)
 
   return (
     <div className="space-y-8">
@@ -112,6 +116,32 @@ export function AppearanceSettings() {
             onChange={setAutosaveDelayMs}
           />
         </div>
+      </section>
+
+      <section className="space-y-3 border-t border-border/70 pt-6">
+        <div>
+          <h2 className="flex items-center gap-1.5 text-sm font-semibold">
+            <ScanText className="size-3.5" /> Style tics
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            Your own watchlist of words you lean on — "just", "suddenly", a pet phrase. Every
+            one gets a wavy underline in the editor so the habit stops hiding. Nothing is ever
+            changed for you; seeing it is the point. One per line, or comma-separated.
+          </p>
+        </div>
+        <Textarea
+          aria-label="Style tics watchlist"
+          value={styleTics.join('\n')}
+          onChange={(e) => setStyleTics(parseTicList(e.target.value))}
+          placeholder={'just\nsuddenly\nvery\nsomehow'}
+          rows={5}
+          className="max-w-sm font-mono text-sm"
+        />
+        {styleTics.length > 0 && (
+          <p className="text-xs text-muted-foreground">
+            Watching {styleTics.length} word{styleTics.length === 1 ? '' : 's'}.
+          </p>
+        )}
       </section>
 
       <div className="border-t border-border/70 pt-6">

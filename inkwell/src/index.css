@@ -548,6 +548,17 @@
     text-underline-offset: 3px;
     cursor: pointer;
   }
+
+  /* Style tics: a warm wavy underline, distinct from the Codex's cool
+     dotted one, so a writer can tell "this is a name" from "this is a
+     word I lean on" at a glance. */
+  .tic-highlight {
+    text-decoration: underline;
+    text-decoration-style: wavy;
+    text-decoration-color: var(--color-warning);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
 }
 
 /* The writing page and the reader's book share one edge. They are the same
