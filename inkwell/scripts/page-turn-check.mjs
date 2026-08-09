@@ -229,6 +229,37 @@ check(
   await footerText(),
 )
 
+// ── Impatient tapping must never snap the book backward ─────────────────────
+// The field bug: a tap during an in-flight turn used to trigger a raw index
+// swap, and the airborne turn's stale commit then landed on top of it —
+// the page visibly snapped back. Taps during flight are now swallowed.
+const pageNo = (text) => Number(/page (\d+)/.exec(text)?.[1] ?? 0)
+const startNo = pageNo(await footerText())
+const seen = []
+for (let tap = 0; tap < 4; tap++) {
+  await page.getByRole('button', { name: 'Next page' }).click()
+  await page.waitForTimeout(70)
+}
+for (let i = 0; i < 30; i++) {
+  seen.push(pageNo(await footerText()))
+  await page.waitForTimeout(90)
+}
+const wentBackward = seen.some((value, i) => i > 0 && value < seen[i - 1])
+check('a burst of taps never snaps the page backward', false, wentBackward, seen.join(','))
+check('…and lands ahead of where it started', true, seen[seen.length - 1] > startNo,
+  `${startNo} → ${seen[seen.length - 1]}`)
+await page.waitForTimeout(600)
+check('…with no sheet left stranded mid-air', 0, await page.locator('.curl-leaf').count())
+const folio = await page.evaluate(() => {
+  const side = document.querySelector('.book-side .book-folio')
+  return side ? side.textContent : ''
+})
+check(
+  'the page on display matches the page the footer claims',
+  String(pageNo(await footerText())),
+  folio ?? '',
+)
+
 check('no uncaught errors', [], errors)
 
 await browser.close()

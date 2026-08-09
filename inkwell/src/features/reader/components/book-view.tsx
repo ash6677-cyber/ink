@@ -226,6 +226,12 @@ export const BookView = forwardRef<
 
   const jump = useCallback(
     (direction: Direction): boolean => {
+      // A tap while a sheet is already in the air is handled by ignoring
+      // it — NOT by reporting failure. Reporting failure here made the
+      // stage's fallback do a raw index swap mid-flight, and the airborne
+      // turn's commit then landed on top of it with stale numbers: the
+      // page visibly snapped backward. One turn at a time, like a book.
+      if (turnRef.current) return true
       // Someone who has asked their device to reduce motion gets the page,
       // not the theatre: an immediate turn with no sheet in flight.
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
