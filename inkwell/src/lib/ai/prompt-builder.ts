@@ -1,6 +1,6 @@
 import type { AiActionKind, AiPreset, CodexEntry, PointOfView, Tense } from '@/types'
 
-import { contextItem, excluded, makePlan, type ContextItem, type ContextPlan } from './context-plan'
+import { contextItem, excluded, makePlan, type ContextItem, type ContextPlan, trimToTokens } from './context-plan'
 import { estimateTokens } from './token-estimate'
 import type { AiChatMessage } from './types'
 
@@ -86,7 +86,14 @@ function planCodex(
   let used = 0
   const blocks: string[] = []
   for (const entry of relevant) {
-    const block = entryBlock(entry)
+    const rawBlock = entryBlock(entry)
+    // The entry's own budget, honoured at last: the field existed on the
+    // record (and in the form) with no consumer, which made it dishonest UI.
+    // Same contract as lorebook entries — the entry may spend at most its
+    // own cap, and the preview says so when it was cut to fit.
+    const cap = entry.aiContextTokenBudget ?? 0
+    const { text: block, trimmed } =
+      cap > 0 ? trimToTokens(rawBlock, cap) : { text: rawBlock, trimmed: false }
     const blockTokens = estimateTokens(block)
     if (used + blockTokens > budget) {
       items.push(
@@ -96,7 +103,14 @@ function planCodex(
     }
     blocks.push(block)
     used += blockTokens
-    items.push(contextItem(entry.id, entry.name, block, { source: 'Almanac' }))
+    items.push(
+      contextItem(entry.id, entry.name, block, {
+        source: 'Almanac',
+        ...(trimmed
+          ? { outcome: 'trimmed', reason: `Capped at this entry's own ${cap}-token budget.` }
+          : {}),
+      }),
+    )
   }
 
   return { text: blocks.join('\n\n'), items }

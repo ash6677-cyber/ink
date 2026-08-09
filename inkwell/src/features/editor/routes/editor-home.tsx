@@ -338,7 +338,8 @@ export function EditorHome() {
     [doPersist],
   )
 
-  const debouncedPersist = useDebouncedCallback(persistChange, 800)
+  const autosaveDelayMs = usePreferencesStore((s) => s.autosaveDelayMs)
+  const debouncedPersist = useDebouncedCallback(persistChange, autosaveDelayMs)
 
   function handleEditorChange() {
     if (!activeScene) return

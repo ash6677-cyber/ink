@@ -1,5 +1,6 @@
-import { AlignVerticalSpaceAround, Check, Focus, Type } from 'lucide-react'
+import { AlignVerticalSpaceAround, Check, Focus, Save, Type } from 'lucide-react'
 
+import { Dial } from '@/components/common/dial'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { EDITOR_FONTS } from '@/lib/editor/fonts'
@@ -14,6 +15,8 @@ export function AppearanceSettings() {
   const setTypewriterMode = usePreferencesStore((s) => s.setTypewriterMode)
   const dimInactiveParagraphs = usePreferencesStore((s) => s.dimInactiveParagraphs)
   const setDimInactiveParagraphs = usePreferencesStore((s) => s.setDimInactiveParagraphs)
+  const autosaveDelayMs = usePreferencesStore((s) => s.autosaveDelayMs)
+  const setAutosaveDelayMs = usePreferencesStore((s) => s.setAutosaveDelayMs)
 
   return (
     <div className="space-y-8">
@@ -84,6 +87,29 @@ export function AppearanceSettings() {
             id="dim-paragraphs"
             checked={dimInactiveParagraphs}
             onCheckedChange={setDimInactiveParagraphs}
+          />
+        </div>
+      </section>
+
+      <section id="setting-autosave" className="space-y-3 border-t border-border pt-6">
+        <div>
+          <h2 className="flex items-center gap-1.5 text-sm font-semibold">
+            <Save className="size-3.5" /> Autosave
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            How long the editor waits after your last keystroke before writing the scene to
+            storage. Shorter is safer; longer is quieter on slow disks.
+          </p>
+        </div>
+        <div className="max-w-sm">
+          <Dial
+            label="Autosave delay"
+            value={autosaveDelayMs}
+            min={200}
+            max={3000}
+            step={100}
+            format={(ms) => `${(ms / 1000).toFixed(1)}s`}
+            onChange={setAutosaveDelayMs}
           />
         </div>
       </section>

@@ -26,8 +26,11 @@ interface PreferencesState {
   sampleBookOffered: boolean
   /** The writer's own key bindings, by shortcut id; absent means default. */
   shortcutOverrides: ShortcutOverrides
+  /** How long the editor waits after the last keystroke before saving. */
+  autosaveDelayMs: number
   setEditorFont: (id: string) => void
   setShortcutOverride: (id: ShortcutId, combo: string) => void
+  setAutosaveDelayMs: (ms: number) => void
   clearShortcutOverride: (id: ShortcutId) => void
   setTypewriterMode: (value: boolean) => void
   setDimInactiveParagraphs: (value: boolean) => void
@@ -48,7 +51,9 @@ export const usePreferencesStore = create<PreferencesState>()(
       lastExportFormat: null,
       sampleBookOffered: false,
       shortcutOverrides: {},
+      autosaveDelayMs: 800,
       setEditorFont: (id) => set({ editorFont: id }),
+      setAutosaveDelayMs: (ms) => set({ autosaveDelayMs: Math.min(5000, Math.max(200, ms)) }),
       setShortcutOverride: (id, combo) =>
         set((s) => {
           const next = { ...s.shortcutOverrides, [id]: combo }

@@ -9,6 +9,7 @@ import {
   Sparkles,
   User,
   XCircle,
+  Search,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
@@ -25,6 +26,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useToast } from '@/components/ui/use-toast'
 import { AccountSettings } from '@/features/auth/components/account-settings'
@@ -47,7 +49,44 @@ const PROVIDER_KIND_LABEL: Record<AiProviderConfig['kind'], string> = {
 
 const TABS = ['ai', 'appearance', 'shortcuts', 'data', 'account'] as const
 
+/**
+ * The searchable map of Settings: label → tab (and, where a control has an
+ * anchor, the element to scroll to). Flat and hand-kept on purpose — the
+ * cost of a new line per setting is what buys "type autosave, land on it".
+ */
+const SETTINGS_INDEX: { label: string; tab: string; anchor?: string }[] = [
+  { label: 'AI providers', tab: 'ai' },
+  { label: 'AI presets', tab: 'ai' },
+  { label: 'Manuscript typeface', tab: 'appearance' },
+  { label: 'Focus mode · typewriter scrolling', tab: 'appearance' },
+  { label: 'Focus mode · dim other paragraphs', tab: 'appearance' },
+  { label: 'Autosave delay', tab: 'appearance', anchor: 'setting-autosave' },
+  { label: 'Theme & colours', tab: 'appearance' },
+  { label: 'Keyboard shortcuts', tab: 'shortcuts' },
+  { label: 'Export or import your library', tab: 'data' },
+  { label: 'Storage health', tab: 'data' },
+  { label: 'Recently deleted (trash)', tab: 'data' },
+  { label: 'Account & sign-in', tab: 'account' },
+]
+
 export function SettingsHome() {
+  const [settingsQuery, setSettingsQuery] = useState('')
+  function jumpToSetting(item: { tab: string; anchor?: string }) {
+    setSettingsQuery('')
+    selectTab(item.tab)
+    if (item.anchor) {
+      // The panel mounts with the tab switch; scroll on the next frame.
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          const el = document.getElementById(item.anchor!)
+          el?.scrollIntoView({ block: 'center' })
+          el?.classList.add('ring-2', 'ring-ring', 'rounded-md')
+          setTimeout(() => el?.classList.remove('ring-2', 'ring-ring', 'rounded-md'), 1600)
+        }),
+      )
+    }
+  }
+
   useDocumentTitle('Settings')
   const { providers, presets, loadAll, createProvider, updateProvider, deleteProvider, validateProvider, createPreset, updatePreset, deletePreset } =
     useAiStore()
@@ -139,6 +178,36 @@ export function SettingsHome() {
       <PageHeader title="Settings" />
 
       <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div className="relative mb-4 max-w-3xl">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={settingsQuery}
+            onChange={(e) => setSettingsQuery(e.target.value)}
+            placeholder="Search settings…"
+            aria-label="Search settings"
+            className="pl-9"
+          />
+          {settingsQuery.trim() && (
+            <div className="absolute z-20 mt-1 w-full rounded-md border border-border bg-card p-1 shadow-md">
+              {SETTINGS_INDEX.filter((i) =>
+                i.label.toLowerCase().includes(settingsQuery.trim().toLowerCase()),
+              ).map((item) => (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={() => jumpToSetting(item)}
+                  className="flex w-full items-center justify-between rounded px-2.5 py-2 text-left text-sm hover:bg-accent pointer-coarse:min-h-11"
+                >
+                  {item.label}
+                  <span className="text-xs capitalize text-muted-foreground">{item.tab}</span>
+                </button>
+              ))}
+              {SETTINGS_INDEX.every(
+                (i) => !i.label.toLowerCase().includes(settingsQuery.trim().toLowerCase()),
+              ) && <p className="px-2.5 py-2 text-sm text-muted-foreground">Nothing matches.</p>}
+            </div>
+          )}
+        </div>
         <Tabs value={tab} onValueChange={selectTab} className="max-w-3xl">
           <TabsList className="-mx-4 max-w-[calc(100%+2rem)] overflow-x-auto px-4 sm:mx-0 sm:max-w-full sm:px-1">
             <TabsTrigger value="ai" className="gap-1.5">

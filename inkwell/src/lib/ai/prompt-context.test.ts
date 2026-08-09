@@ -123,6 +123,26 @@ describe('the Almanac in an editor prompt', () => {
     expect(omitted[0].reason).toMatch(/budget/i)
   })
 
+  it('honours an entry’s own token budget, and the preview says it was cut', () => {
+    const capped = entry({
+      name: 'Mira',
+      aiContext: 'always',
+      summary: 'long '.repeat(200),
+      aiContextTokenBudget: 30,
+    })
+    const built = buildPrompt({ ...base, codexEntries: [capped] })
+    const item = built.plan.items.find((i) => i.label === 'Mira')
+    expect(item?.outcome).toBe('trimmed')
+    expect(item?.reason).toMatch(/own 30-token budget/)
+    expect(item?.tokens).toBeLessThanOrEqual(30)
+    // No budget set means no cap — same entry, unclipped.
+    const free = buildPrompt({
+      ...base,
+      codexEntries: [entry({ name: 'Mira', aiContext: 'always', summary: 'long '.repeat(200) })],
+    })
+    expect(free.plan.items.find((i) => i.label === 'Mira')?.outcome).toBe('included')
+  })
+
   it('accounts for every entry exactly once, sent or not', () => {
     const entries = [
       entry({ name: 'A', aiContext: 'never' }),

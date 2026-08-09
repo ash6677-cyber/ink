@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
-import { ENTRY_TYPE_ICON, ENTRY_TYPE_LABEL } from '@/features/codex/lib/entry-type'
+import { ENTRY_TYPE_ICON, ENTRY_TYPE_LABEL } from '@/features/almanac/lib/entry-type'
 import { imageAssetRepo } from '@/lib/db/repositories'
 import { useObjectUrl } from '@/lib/hooks/use-object-url'
 import type { CodexEntry } from '@/types'

@@ -6,7 +6,7 @@ import {
   findAppearances,
   totalMentions,
 } from '@/features/almanac/lib/mentions'
-import { ENTRY_TYPE_LABEL } from '@/features/codex/lib/entry-type'
+import { ENTRY_TYPE_LABEL } from '@/features/almanac/lib/entry-type'
 import { db } from '@/lib/db/schema'
 import { cn } from '@/lib/utils'
 import type { CodexEntry } from '@/types'

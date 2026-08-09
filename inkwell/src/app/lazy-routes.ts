@@ -12,10 +12,10 @@ export const EditorHome = lazy(() =>
   import('@/features/editor/routes/editor-home').then((m) => ({ default: m.EditorHome })),
 )
 export const CodexHome = lazy(() =>
-  import('@/features/codex/routes/codex-home').then((m) => ({ default: m.CodexHome })),
+  import('@/features/almanac/routes/codex-home').then((m) => ({ default: m.CodexHome })),
 )
 export const CodexEntryDetail = lazy(() =>
-  import('@/features/codex/routes/codex-entry-detail').then((m) => ({
+  import('@/features/almanac/routes/codex-entry-detail').then((m) => ({
     default: m.CodexEntryDetail,
   })),
 )

@@ -18,11 +18,11 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/use-toast'
 import { AppearancesList } from '@/features/almanac/components/appearances-list'
-import { AttributeList } from '@/features/codex/components/attribute-list'
-import { CodexBodyEditor } from '@/features/codex/components/codex-body-editor'
-import { ImageUploadField } from '@/features/codex/components/image-upload-field'
-import { RelationshipList } from '@/features/codex/components/relationship-list'
-import { ENTRY_TYPES, ENTRY_TYPE_LABEL } from '@/features/codex/lib/entry-type'
+import { AttributeList } from '@/features/almanac/components/attribute-list'
+import { CodexBodyEditor } from '@/features/almanac/components/codex-body-editor'
+import { ImageUploadField } from '@/features/almanac/components/image-upload-field'
+import { RelationshipList } from '@/features/almanac/components/relationship-list'
+import { ENTRY_TYPES, ENTRY_TYPE_LABEL } from '@/features/almanac/lib/entry-type'
 import { useDebouncedCallback } from '@/lib/hooks/use-debounced-callback'
 import { useCodexStore } from '@/stores/codex-store'
 import type { AiContextInclusion, CodexEntryType, RichContent } from '@/types'
@@ -273,6 +273,35 @@ export function CodexEntryDetail() {
               onRemove={(id) => removeRelationship(entry.id, id)}
               onNavigate={(id) => navigate(`/almanac/${id}?project=${projectId}`)}
             />
+            {/* The other direction, computed rather than stored: a link is
+                one fact ("Edda — mother of → Maren"), and asking writers to
+                record it twice guarantees the two copies drift. */}
+            {(() => {
+              const inbound = otherEntries.flatMap((other) =>
+                other.relationships
+                  .filter((rel) => rel.targetEntryId === entry.id)
+                  .map((rel) => ({ other, label: rel.label })),
+              )
+              if (inbound.length === 0) return null
+              return (
+                <div className="mt-1 space-y-1">
+                  <p className="text-xs text-muted-foreground">Pointed here by</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {inbound.map(({ other, label }) => (
+                      <button
+                        key={`${other.id}-${label}`}
+                        type="button"
+                        onClick={() => navigate(`/almanac/${other.id}?project=${projectId}`)}
+                        className="rounded-full border border-border px-2.5 py-1 text-xs hover:bg-accent pointer-coarse:min-h-9"
+                      >
+                        <span className="font-medium">{other.name}</span>
+                        <span className="text-muted-foreground"> · {label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )
+            })()}
           </div>
 
           <div className="grid gap-1.5">
