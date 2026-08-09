@@ -18,6 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/use-toast'
 import { AppearancesList } from '@/features/almanac/components/appearances-list'
+import { PresenceStrip } from '@/features/almanac/components/presence-strip'
 import { AttributeList } from '@/features/almanac/components/attribute-list'
 import { CodexBodyEditor } from '@/features/almanac/components/codex-body-editor'
 import { ImageUploadField } from '@/features/almanac/components/image-upload-field'
@@ -263,6 +264,8 @@ export function CodexEntryDetail() {
               Putting one inside the other read as though the scenes listed
               were somehow relationships. */}
           <AppearancesList entry={entry} projectId={projectId} />
+
+          <PresenceStrip entry={entry} projectId={projectId} />
 
           <div className="grid gap-1.5">
             <Label>Relationships</Label>
