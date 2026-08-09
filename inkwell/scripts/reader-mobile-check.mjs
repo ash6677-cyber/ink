@@ -104,13 +104,17 @@ const align = await page.evaluate(() => {
 check('prose is ragged right on a phone', 'left', align)
 
 // ── A tap turns the page ────────────────────────────────────────────────────
+// Aimed at the stage — the element that owns the pointer handlers — since
+// the two-up spread layers pages over each other and a finger doesn't care
+// which element is topmost.
 const before = await where()
-await page.locator('.book-flow, [class*="book-page"]').first().tap({ position: { x: 200, y: 200 } })
+const stageBox = await page.locator('.book-stage').boundingBox()
+await page.touchscreen.tap(stageBox.x + stageBox.width * 0.8, stageBox.y + stageBox.height / 2)
 await page.waitForTimeout(1200)
 const afterTap = await where()
-check('tapping the right of the page turns forward', true, afterTap !== before, `${before} → ${afterTap}`)
+check('tapping the right of the spread turns forward', true, afterTap !== before, `${before} → ${afterTap}`)
 
-await page.locator('.book-flow, [class*="book-page"]').first().tap({ position: { x: 40, y: 200 } })
+await page.touchscreen.tap(stageBox.x + stageBox.width * 0.2, stageBox.y + stageBox.height / 2)
 await page.waitForTimeout(1200)
 check('tapping the left turns back', before, await where())
 

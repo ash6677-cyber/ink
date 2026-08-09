@@ -286,7 +286,10 @@
      property the editor writes is `--editor-font` — so the book was printed in
      fallback Literata no matter what the writer had chosen. */
   font-family: var(--reading-font, var(--editor-font, var(--display-font)));
-  font-size: calc(1.02rem * var(--prose-scale, 1));
+  /* --page-fit-scale shrinks type with the page itself (the phone's
+     two-up spread); --prose-scale stays the writer's own reading-size
+     choice from the theme. They multiply. */
+  font-size: calc(1.02rem * var(--prose-scale, 1) * var(--page-fit-scale, 1));
   line-height: calc(1.72 * var(--prose-leading, 1));
   color: var(--ink);
   text-align: justify;
@@ -331,7 +334,8 @@
 
 .book-chapter-number {
   margin: 0 0 0.45em;
-  font-size: 0.72rem;
+  /* em, not rem: headings ride the flow's size so they scale with the page. */
+  font-size: 0.7em;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--ink-soft);
@@ -339,7 +343,7 @@
 
 .book-chapter-title {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.45em;
   font-weight: 600;
   line-height: 1.25;
   text-align: center;
@@ -348,7 +352,7 @@
 .book-h {
   break-after: avoid;
   margin: 1.4em 0 0.6em;
-  font-size: 1.1rem;
+  font-size: 1.08em;
   font-weight: 600;
   text-align: left;
 }
@@ -395,19 +399,19 @@
 
 .book-folio {
   position: absolute;
-  bottom: 18px;
-  font-size: 0.7rem;
+  bottom: 2.2%;
+  font-size: calc(0.7rem * var(--page-fit-scale, 1));
   letter-spacing: 0.05em;
   color: var(--ink-soft);
   pointer-events: none;
 }
 
 .book-folio-left {
-  left: 34px;
+  left: 6.5%;
 }
 
 .book-folio-right {
-  right: 34px;
+  right: 6.5%;
 }
 
 .book-measure {
@@ -448,7 +452,7 @@
 
 .book-front-title {
   font-family: var(--display-font);
-  font-size: clamp(1.6rem, 4.4cqw, 2.6rem);
+  font-size: clamp(calc(1.6rem * var(--page-fit-scale, 1)), 4.4cqw, 2.6rem);
   font-weight: 600;
   line-height: 1.15;
   letter-spacing: -0.01em;
@@ -457,7 +461,7 @@
 .book-front-author {
   margin-top: 1.4em;
   font-family: var(--display-font);
-  font-size: clamp(0.85rem, 2cqw, 1rem);
+  font-size: clamp(calc(0.85rem * var(--page-fit-scale, 1)), 2cqw, 1rem);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   opacity: 0.7;

@@ -15,11 +15,21 @@ import '@/features/reader/reader.css'
 
 /** Roughly a trade paperback: height / width. */
 const PAGE_ASPECT = 1.52
-/** Below this the spread becomes a single page, as on a phone. */
-const TWO_PAGE_MIN_WIDTH = 940
+
+/**
+ * The reference page width the typography was designed at. Smaller pages
+ * scale their type down proportionally (floored — see below), so a phone's
+ * two-up spread reads like a real paperback held at arm's length instead
+ * of desktop type crammed into a miniature page.
+ */
+const FULL_TYPE_PAGE_WIDTH = 430
+const MIN_TYPE_SCALE = 0.66
 
 function computeMetrics(width: number, height: number, columns: 1 | 2): PageMetrics {
-  const availableW = Math.max(240, width - 56)
+  // Small screens give almost everything to the pages; the two-up spread
+  // needs the room far more than side margins do.
+  const chrome = width < 700 ? 16 : 56
+  const availableW = Math.max(240, width - chrome)
   const availableH = Math.max(320, height - 40)
   const pageW = Math.min(availableW / columns, availableH / PAGE_ASPECT)
   const pageH = pageW * PAGE_ASPECT
@@ -73,11 +83,19 @@ export function BookStage({
     return () => observer.disconnect()
   }, [])
 
-  const columns: 1 | 2 = box.width >= TWO_PAGE_MIN_WIDTH ? 2 : 1
+  // Always an open book: two facing pages, scaled to whatever screen this
+  // is. One-page mode forced the turn to pivot at a spine the screen didn't
+  // show, and every animation built on that geometry read as broken — the
+  // sheet needs a facing page to land on, so the facing page is always there.
+  const columns: 1 | 2 = 2
   const metrics = useMemo(
     () => computeMetrics(box.width, box.height, columns),
     [box.width, box.height, columns],
   )
+
+  // Type shrinks with the page, floored where it stops being print and
+  // starts being squinting.
+  const typeScale = Math.max(MIN_TYPE_SCALE, Math.min(1, metrics.width / FULL_TYPE_PAGE_WIDTH))
 
   // Page counts arrive from hidden measurers, one per chapter — the browser
   // does the pagination via CSS columns and we just read back how many
@@ -120,7 +138,11 @@ export function BookStage({
 
   return (
     <>
-      <div ref={stageRef} className="relative flex min-h-0 flex-1 items-center justify-center">
+      <div
+        ref={stageRef}
+        className="relative flex min-h-0 flex-1 items-center justify-center"
+        style={{ '--page-fit-scale': String(typeScale) } as React.CSSProperties}
+      >
         {ready ? (
           <BookView
             ref={viewRef}

@@ -190,10 +190,10 @@ check(
   persisted,
 )
 
-// ── Single-page (phone) mode: the destination is under the sheet ────────────
-// The bug this guards against: 1-col mode painted the CURRENT page beneath
-// a forward turn, so the sheet flew away to reveal an identical page — every
-// turn read as "opened, then snapped back closed".
+// ── The phone shows a real open book: two smaller facing pages ──────────────
+// One-page mode is gone by design: the turn pivots at the spine, and a
+// spine with no facing page swung half of every turn off-screen. Two-up,
+// the sheet always has somewhere on-screen to land.
 await page.setViewportSize({ width: 390, height: 844 })
 await page.waitForTimeout(900)
 // The backup nudge would sit exactly over the footer buttons — snooze it
@@ -211,18 +211,32 @@ while ((await footerText()).includes('page')) {
   await page.getByRole('button', { name: 'Previous page' }).click()
   await page.waitForTimeout(700)
 }
-await page.getByRole('button', { name: 'Next page' }).click()
-await page.waitForTimeout(120)
-const underneath = await page.evaluate(() => {
-  const side = document.querySelector('.book-side')
-  return side ? side.textContent ?? '' : ''
+const spread = await page.evaluate(() => {
+  const pages = [...document.querySelectorAll('.book-side .book-page')].map((n) =>
+    n.getBoundingClientRect(),
+  )
+  return {
+    count: pages.length,
+    allOn: pages.every((r) => r.left >= -2 && r.right <= window.innerWidth + 2),
+    widths: pages.map((r) => Math.round(r.width)),
+  }
+})
+check('the phone shows two facing pages', 2, spread.count, spread.widths.join('+'))
+check('…both fully on screen', true, spread.allOn)
+
+const typeScale = await page.evaluate(() => {
+  const stage = document.querySelector('.book-stage')?.parentElement
+  return stage ? getComputedStyle(stage).getPropertyValue('--page-fit-scale').trim() : ''
 })
 check(
-  'on a phone, the page beneath a lifting cover is already chapter one',
+  'the type scales down with the smaller pages',
   true,
-  underneath.includes('Chapter 1'),
-  underneath.slice(0, 40),
+  Number(typeScale) > 0.5 && Number(typeScale) < 1,
+  typeScale,
 )
+
+await page.getByRole('button', { name: 'Next page' }).click()
+await page.waitForTimeout(120)
 // Sampled across the WHOLE turn, not one early frame: the field bug was a
 // spine-pivoted flip whose entire second half swung off the left of the
 // screen — "off centre, half of it not visible". Centre-pivoted, every
@@ -247,21 +261,11 @@ check(
   offStage.length,
   `${flightSamples.length} frames sampled, worst: ${JSON.stringify(offStage[0] ?? null)}`,
 )
-check(
-  'the phone sheet pivots about its own centre',
-  true,
-  await page.evaluate(() => {
-    const seg = document.querySelector('.curl-segment')
-    if (!seg) return true // already settled — the samples above cover it
-    const origin = parseFloat(getComputedStyle(seg).transformOrigin)
-    return origin > seg.getBoundingClientRect().width * 0.4
-  }),
-)
 await page.waitForTimeout(1400)
 check(
-  'the phone turn lands on page one',
+  'the phone turn lands on the next spread',
   true,
-  (await footerText()).includes('page 1'),
+  (await footerText()).includes('page 2'),
   await footerText(),
 )
 
