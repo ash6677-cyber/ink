@@ -17,13 +17,13 @@ targets below. One check is a hard gate — the Firebase one — because it is
 a §23 acceptance box; the timings are advisory so a slow CI box can't turn
 a healthy build red. This file is the record the misses are documented in.
 
-## Baseline — 2026-08-09, v0.7.1 (sandbox container, Chromium via CDP)
+## Baseline — 2026-08-09, v0.8.1 (sandbox container, Chromium via CDP)
 
 | Measurement | Target | Measured | Verdict |
 | --- | --- | --- | --- |
 | Signed-out cold start downloads Firebase bytes | 0 bytes | 0 bytes | **PASS (hard gate)** |
-| Initial route JS, gzipped | < 350 KB | 448 KB | MISS — follow-up below |
-| Cold start → interactive Projects, 4× CPU throttle | < 2.5 s | ~1.3 s | MEET |
+| Initial route JS, gzipped | < 350 KB | 282 KB | MEET |
+| Cold start → interactive Projects, 4× CPU throttle | < 2.5 s | ~0.9–1.3 s | MEET |
 | Editor open, big book, 4× CPU throttle | < 1.5 s | ~1.2 s | MEET |
 | Keystroke round-trip p95, 2k-word scene | < 33 ms | 11–15 ms | MEET |
 | Almanac filter over 200 entries | < 100 ms | ~23 ms | MEET |
@@ -36,6 +36,14 @@ budgets of 20–30 ms averaged over whole sentences, project-wide search
 
 ## What was fixed to get here
 
+- **The export machinery left the boot path.** Sourcemap attribution showed
+  the catch-all `vendor` chunk carrying `docx` (1.06 MB of source), `jszip`
+  and `re2js` — dependencies only the export dialog uses. The dialog now
+  imports the builders dynamically, and the chunking config names them into
+  `vendor-export` (170 KB gz) so the catch-all can't swallow them back.
+  Boot graph: 424 KB → 260 KB gz; measured boot requests 282 KB against the
+  350 KB target. The 193k-word EPUB/DOCX stress exports still pass through
+  the dynamic path.
 - **Google Fonts no longer holds first paint hostage.** The fonts
   stylesheet was render-blocking, so any visitor whose network could not
   reach Google promptly stared at a white page for the connection timeout
@@ -59,11 +67,5 @@ budgets of 20–30 ms averaged over whole sentences, project-wide search
 
 ## Documented misses and their follow-ups
 
-- **Initial route JS 448 KB gz (target 350).** The dominant chunk is the
-  catch-all `vendor` (826 KB raw / 249 KB gz). Follow-up: run a bundle
-  analysis (rolldown output analyzer) against it and split or defer the
-  heaviest members the Projects route doesn't need — candidates are the
-  icon library's import surface and export-related dependencies that
-  belong behind their feature routes. Do not split blind: measure first,
-  the same rule §23 applies everywhere.
+None. Every §23 target currently meets; this section exists for the next one.
   every other harness in this repo.)

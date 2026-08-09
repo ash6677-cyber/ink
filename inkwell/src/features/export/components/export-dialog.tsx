@@ -11,11 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useToast } from '@/components/ui/use-toast'
-import {
-  buildExport,
-  FORMAT_META,
-  type ExportFormat,
-} from '@/features/export/lib/exporters'
+import { FORMAT_META, type ExportFormat } from '@/features/export/lib/export-formats'
 import { saveExport } from '@/features/export/lib/save-file'
 import { compileBook, type BookChapter } from '@/features/reader/lib/compile-book'
 import { chapterRepo, sceneRepo } from '@/lib/db/repositories'
@@ -82,6 +78,9 @@ export function ExportDialog({
     if (!project || !book) return
     setBusy(true)
     try {
+      // The DOCX/EPUB machinery is over a megabyte of source; it loads the
+      // first time someone actually exports, never at boot.
+      const { buildExport } = await import('@/features/export/lib/exporters')
       const result = await buildExport(format, project, book)
       const outcome = await saveExport(result)
       if (outcome === 'saved') {

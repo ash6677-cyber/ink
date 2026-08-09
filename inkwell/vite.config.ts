@@ -35,6 +35,12 @@ export default defineConfig({
           // paint; in its own chunk it is fetched the first time someone
           // opens a box set and never otherwise.
           if (/[\\/]three[\\/]/.test(id)) return 'vendor-three'
+          // The export machinery, same reasoning as three.js: docx alone is
+          // over a megabyte of source, and jszip/re2js ride with it. The
+          // export dialog imports the builders dynamically; naming them here
+          // keeps the catch-all `vendor` — which the entry loads at boot —
+          // from swallowing them back in.
+          if (/[\\/]docx[\\/]|[\\/]jszip[\\/]|[\\/]re2js[\\/]/.test(id)) return 'vendor-export'
           return 'vendor'
         },
       },

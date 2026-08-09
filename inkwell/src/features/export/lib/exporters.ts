@@ -17,47 +17,9 @@ import {
 } from '@/features/export/lib/serialize'
 import type { Project } from '@/types'
 
-export type ExportFormat = 'markdown' | 'text' | 'html' | 'docx' | 'epub'
+import { FORMAT_META, type ExportFormat, type ExportResult } from './export-formats'
 
-export interface ExportResult {
-  filename: string
-  mimeType: string
-  /** Text payload, for the formats that are text. */
-  text?: string
-  /** Binary payload, for DOCX and EPUB. */
-  bytes?: Uint8Array
-}
-
-export const FORMAT_META: Record<
-  ExportFormat,
-  { label: string; extension: string; description: string }
-> = {
-  markdown: {
-    label: 'Markdown',
-    extension: 'md',
-    description: 'Plain text with formatting marks. Good for Git, Obsidian, or further tooling.',
-  },
-  text: {
-    label: 'Plain text',
-    extension: 'txt',
-    description: 'Just the words, no formatting at all.',
-  },
-  html: {
-    label: 'HTML',
-    extension: 'html',
-    description: 'A single self-contained web page you can open in any browser or print.',
-  },
-  docx: {
-    label: 'Word (.docx)',
-    extension: 'docx',
-    description: 'Opens in Word, Pages, and Google Docs. Chapters start on new pages.',
-  },
-  epub: {
-    label: 'EPUB',
-    extension: 'epub',
-    description: 'A real ebook, readable in Apple Books, Kobo, Calibre, and most e-readers.',
-  },
-}
+export { FORMAT_META, type ExportFormat, type ExportResult }
 
 function safeFilename(title: string): string {
   const cleaned = title

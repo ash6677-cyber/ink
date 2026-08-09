@@ -1,6 +1,6 @@
 import { blobToBase64 } from '@/lib/base64'
 import { exportLibraryRaw, isTauriRuntime, saveBinaryFile } from '@/lib/db/tauri-bridge'
-import type { ExportResult } from '@/features/export/lib/exporters'
+import type { ExportResult } from '@/features/export/lib/export-formats'
 
 /**
  * Writes an export to disk.
