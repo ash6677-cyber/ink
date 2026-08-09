@@ -27,7 +27,7 @@ export function NavRail() {
       )}
     >
       <div className={cn('flex h-14 items-center gap-2 px-4', collapsed && 'justify-center px-0')}>
-        <div className="flex size-7 shrink-0 items-center justify-center rounded-md brand-gradient-surface text-primary-foreground shadow-sm">
+        <div className="flex size-7 shrink-0 items-center justify-center rounded-md brand-gradient-surface brand-mark-neon text-primary-foreground shadow-sm">
           <Feather className="size-4" strokeWidth={2} />
         </div>
         {!collapsed && (

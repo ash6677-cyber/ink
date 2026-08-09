@@ -37,7 +37,7 @@ export function MobileTopBar() {
             </SheetHeader>
           </VisuallyHidden>
           <div className="flex h-14 items-center gap-2 border-b border-border px-4">
-            <div className="flex size-7 shrink-0 items-center justify-center rounded-md brand-gradient-surface text-primary-foreground shadow-sm">
+            <div className="flex size-7 shrink-0 items-center justify-center rounded-md brand-gradient-surface brand-mark-neon text-primary-foreground shadow-sm">
               <Feather className="size-4" strokeWidth={2} />
             </div>
             <span className="font-serif text-base font-semibold tracking-tight">Inkwell</span>
@@ -90,7 +90,7 @@ export function MobileTopBar() {
       </Sheet>
 
       <div className="flex flex-1 items-center gap-2">
-        <div className="flex size-6 shrink-0 items-center justify-center rounded-md brand-gradient-surface text-primary-foreground">
+        <div className="flex size-6 shrink-0 items-center justify-center rounded-md brand-gradient-surface brand-mark-neon text-primary-foreground">
           <Feather className="size-3.5" strokeWidth={2} />
         </div>
         <span className="font-serif text-sm font-semibold tracking-tight text-sidebar-foreground">

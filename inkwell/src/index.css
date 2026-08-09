@@ -569,3 +569,35 @@
     opacity: 1;
   }
 }
+
+/* The logo's neon breath. Every seven seconds the mark catches a brief
+   electric-violet light — drawn from the theme's own primary and brand
+   hues, so it reads as the brand catching light rather than a foreign
+   neon pasted on. Composited only (glow + filter): no layout, no paint
+   storms. The period rides --motion-scale but is floored well clear of
+   strobing; reduced-motion turns it off entirely. */
+@keyframes brand-neon-flash {
+  0%,
+  76%,
+  94%,
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+    filter: brightness(1) saturate(1);
+  }
+  83% {
+    box-shadow:
+      0 0 10px 1px color-mix(in oklch, var(--primary) 75%, var(--brand-2)),
+      0 0 24px 5px color-mix(in oklch, var(--brand-2) 50%, transparent);
+    filter: brightness(1.22) saturate(1.3);
+  }
+}
+
+.brand-mark-neon {
+  animation: brand-neon-flash calc(7s * max(var(--motion-scale, 1), 0.4)) ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-mark-neon {
+    animation: none;
+  }
+}
