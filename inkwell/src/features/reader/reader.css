@@ -61,6 +61,15 @@
   cursor: grabbing;
 }
 
+/* One page, one screen: the sheet pivots at the screen's left edge, so at
+   mid-turn it points straight at the viewer. Under the two-page spread's
+   close perspective it balloons past the screen edges — a longer viewing
+   distance and an origin over the pivot keep the whole turn on stage. */
+.book-stage-single {
+  perspective: 3600px;
+  perspective-origin: 10% 45%;
+}
+
 .book-side {
   position: absolute;
   top: 0;

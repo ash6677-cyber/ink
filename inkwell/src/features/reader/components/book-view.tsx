@@ -420,6 +420,12 @@ export const BookView = forwardRef<
   // underneath — otherwise you'd see the table through the gap.
   const underRight = turn?.direction === 'forward' ? leftPage + 3 : rightPage
   const underLeft = turn?.direction === 'backward' ? leftPage - 2 : leftPage
+  // Single-page mode has its own answer: a forward turn lifts the current
+  // page, so the DESTINATION must already be painted beneath it. Painting
+  // the current page there (the old behaviour) made every turn look like it
+  // opened and snapped shut — the sheet flew away only to reveal an
+  // identical page, which then swapped abruptly at the end.
+  const underSingle = turn?.direction === 'forward' ? leftPage + 1 : leftPage
 
   void pageCounts
 
@@ -440,9 +446,9 @@ export const BookView = forwardRef<
       )}
 
       <div className="book-side book-side-right">
-        {renderPage(columns === 2 ? underRight : leftPage, columns === 2 ? 'right' : 'left')}
+        {renderPage(columns === 2 ? underRight : underSingle, columns === 2 ? 'right' : 'left')}
         <span className="book-folio book-folio-right">
-          {pageNumberFor(columns === 2 ? underRight : leftPage)}
+          {pageNumberFor(columns === 2 ? underRight : underSingle)}
         </span>
       </div>
 

@@ -176,6 +176,59 @@ check(
   persisted,
 )
 
+// ── Single-page (phone) mode: the destination is under the sheet ────────────
+// The bug this guards against: 1-col mode painted the CURRENT page beneath
+// a forward turn, so the sheet flew away to reveal an identical page — every
+// turn read as "opened, then snapped back closed".
+await page.setViewportSize({ width: 390, height: 844 })
+await page.waitForTimeout(900)
+// The backup nudge would sit exactly over the footer buttons — snooze it
+// without disturbing the rest of the persisted preferences.
+await page.evaluate(() => {
+  const raw = JSON.parse(localStorage.getItem('inkwell-preferences') ?? '{"state":{},"version":0}')
+  raw.state.backupSnoozedUntil = Date.now() + 86400000
+  localStorage.setItem('inkwell-preferences', JSON.stringify(raw))
+})
+// Back to the front cover so the flight is unmistakable: cover lifts,
+// chapter one must already be waiting underneath.
+await page.evaluate(() => window.location.reload())
+await page.waitForTimeout(1800)
+while ((await footerText()).includes('page')) {
+  await page.getByRole('button', { name: 'Previous page' }).click()
+  await page.waitForTimeout(700)
+}
+await page.getByRole('button', { name: 'Next page' }).click()
+await page.waitForTimeout(120)
+const underneath = await page.evaluate(() => {
+  const side = document.querySelector('.book-side')
+  return side ? side.textContent ?? '' : ''
+})
+check(
+  'on a phone, the page beneath a lifting cover is already chapter one',
+  true,
+  underneath.includes('Chapter 1'),
+  underneath.slice(0, 40),
+)
+const inFlightBounds = await page.evaluate(() => {
+  const leaf = document.querySelector('.curl-leaf')
+  if (!leaf) return null
+  const r = leaf.getBoundingClientRect()
+  return { spillsRight: r.right > window.innerWidth * 1.35, spillsLeft: r.left < -window.innerWidth * 0.35 }
+})
+check(
+  'the turning sheet stays roughly on stage instead of ballooning away',
+  true,
+  inFlightBounds === null || (!inFlightBounds.spillsRight && !inFlightBounds.spillsLeft),
+  JSON.stringify(inFlightBounds),
+)
+await page.waitForTimeout(1400)
+check(
+  'the phone turn lands on page one',
+  true,
+  (await footerText()).includes('page 1'),
+  await footerText(),
+)
+
 check('no uncaught errors', [], errors)
 
 await browser.close()
