@@ -156,6 +156,21 @@ check(
   brightness(palettes.paper) > brightness(paperBefore) + 60,
   `${paperBefore} → ${palettes.paper}`,
 )
+// The ground around the book must follow too — the field bug was a light
+// page floating in a dark room because the app's body wash bled through
+// the screen's translucent gradient.
+const ground = await page.evaluate(() => {
+  const reader = document.querySelector('.book-reader')
+  if (!reader) return ''
+  const img = getComputedStyle(reader).backgroundImage
+  return /oklch\([^)]+\)|rgba?\([^)]+\)/.exec(img)?.[0] ?? getComputedStyle(reader).backgroundColor
+})
+check(
+  '…and the ground around the book lightens with it',
+  true,
+  brightness(ground) > 180,
+  ground,
+)
 check('…while the app around the book stays dark', true, palettes.htmlIsDark)
 check(
   'the toggle now offers the way back',
@@ -261,6 +276,39 @@ check(
 )
 
 check('no uncaught errors', [], errors)
+
+// ── WebKit engines get the flat flip, and it still turns pages ─────────────
+// Safari (and every iPhone browser — all WebKit) mis-composites the
+// segmented preserve-3d sheet, so on that engine the leaf renders as ONE
+// segment: a plain flip it can composite. Chromium can't reproduce the
+// Safari bug itself, but it CAN prove the engine detection and that the
+// degraded sheet still commits turns correctly.
+const wkCtx = await browser.newContext({
+  viewport: { width: 390, height: 844 },
+  userAgent:
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 ' +
+    '(KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
+})
+const wkPage = await wkCtx.newPage()
+const wkErrors = []
+wkPage.on('pageerror', (e) => wkErrors.push(String(e)))
+const wkProject = await seedBook(wkPage)
+await wkPage.goto(`${BASE}#/read?project=${wkProject}`)
+await wkPage.waitForTimeout(1800)
+const wkFooter = async () => (await wkPage.locator('footer').innerText()).replace(/\s+/g, ' ').trim()
+const wkBefore = await wkFooter()
+await wkPage.getByRole('button', { name: 'Next page' }).click()
+await wkPage.waitForTimeout(90)
+check(
+  'a WebKit user agent gets the single-segment flip',
+  1,
+  await wkPage.locator('.curl-segment').count(),
+)
+await wkPage.waitForTimeout(1400)
+check('…which still lands the turn', true, wkBefore !== (await wkFooter()), await wkFooter())
+check('…with no sheet left behind', 0, await wkPage.locator('.curl-leaf').count())
+check('…and no errors on the WebKit path', [], wkErrors)
+await wkCtx.close()
 
 await browser.close()
 console.log(failures === 0 ? '\nAll checks passed.' : `\n${failures} check(s) failed.`)

@@ -1,20 +1,6 @@
 import { forwardRef, useImperativeHandle, useMemo, useRef, type ReactNode } from 'react'
 
-import { computeCurl, seamOverlap } from '@/features/reader/lib/curl-geometry'
-
-/**
- * Segments across the sheet.
- *
- * Raised from 12, where the shading stepped visibly and the bow read as a
- * folded fan rather than a curve.
- *
- * Each segment is a composited layer holding a full copy of the page, so
- * the count is bought with frame time: measured on a software rasteriser,
- * 12 segments cost ~18ms a frame, 16 ~22ms and 22 ~25ms. Eighteen is where
- * the arc stops looking faceted without the turn losing its headroom on
- * slower hardware.
- */
-export const SEGMENT_COUNT = 18
+import { computeCurl, SEGMENT_COUNT, seamOverlap } from '@/features/reader/lib/curl-geometry'
 
 export interface CurlHandle {
   setProgress: (progress: number) => void

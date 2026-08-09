@@ -17,6 +17,27 @@
  */
 
 /**
+ * WebKit — every browser on an iPhone, plus desktop Safari — mis-composites
+ * the deep preserve-3d chain the bending sheet is built from: segments get
+ * depth-sorted behind the static pages and the turn shows as an off-centre
+ * flash that vanishes. Detected by engine, not platform, because iOS
+ * Chrome and Firefox are WebKit too.
+ */
+const isWebKit =
+  typeof navigator !== 'undefined' &&
+  /AppleWebKit/i.test(navigator.userAgent) &&
+  !/Chrome\/|Chromium\/|Edg\//.test(navigator.userAgent)
+
+/**
+ * Segments across the sheet. Eighteen is where the arc stops looking
+ * faceted without losing frame-time headroom — but on WebKit the sheet
+ * degrades to ONE segment: the bend flattens into a clean single-plane
+ * flip (same spring, same faces, same shading), which is the one 3D
+ * pattern that engine composites reliably.
+ */
+export const SEGMENT_COUNT = isWebKit ? 1 : 18
+
+/**
  * Total angle swept across the sheet at peak bend, in radians (~37°).
  *
  * Tuned down from a much larger value that curled the page into a tube: a
@@ -104,7 +125,9 @@ export function computeCurl(progress: number, width: number, count: number): Seg
   const p = Math.max(0, Math.min(1, progress))
   // Mean rotation of the whole sheet: a straight sweep from right to left.
   const sweep = -Math.PI * p
-  const bend = -MAX_BEND * bendEnvelope(p)
+  // A single segment cannot bend — it is the degraded flat-flip mode, and
+  // half a bend angle baked into its one hinge would just skew the sheet.
+  const bend = count === 1 ? 0 : -MAX_BEND * bendEnvelope(p)
 
   const segmentLength = width / count
   // Centre the bend on the mean angle so the sheet bows symmetrically about
@@ -173,6 +196,8 @@ function clamp01(value: number): number {
  * when the bend is at its worst.
  */
 export function seamOverlap(segmentLength: number, count: number): number {
+  // One segment has no seams to hide.
+  if (count === 1) return 0
   // Kept as small as it can be. Segments carry a translucent shade, so
   // wherever two overlap the shade is painted twice and the seam shows as a
   // dark vertical stripe — with eighteen of them the sheet reads as fluted

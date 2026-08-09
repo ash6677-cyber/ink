@@ -39,6 +39,19 @@
   --ink-soft: oklch(66% 0.008 80);
 }
 
+/* The island paints its own OPAQUE ground. The utility gradient the screen
+   carries ends in a translucent stop, and whatever the app theme painted on
+   the body bled through it — so "Light pages" lightened the paper while the
+   room around the book stayed dark. */
+.book-reader.reader-theme-light,
+.book-reader.reader-theme-dark {
+  background: linear-gradient(
+    to bottom,
+    var(--background),
+    color-mix(in oklch, var(--muted) 30%, var(--background))
+  );
+}
+
 .book-stage {
   position: relative;
   /* A long viewing distance relative to the page keeps the sheet from
@@ -177,6 +190,9 @@
   height: 100%;
   transform-style: preserve-3d;
   pointer-events: none;
+  /* Explicit, so no engine's 3D depth-sorting can decide the airborne
+     sheet belongs behind the static pages. */
+  z-index: 10;
 }
 
 /* ---- the bending sheet ---------------------------------------------------
