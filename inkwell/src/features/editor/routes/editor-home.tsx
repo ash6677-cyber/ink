@@ -31,6 +31,7 @@ import { FindInScene } from '@/features/editor/components/find-in-scene'
 import { ManuscriptSearchPanel } from '@/features/editor/components/manuscript-search-panel'
 import { SceneEditor } from '@/features/editor/components/scene-editor'
 import { SceneMetadataDrawer } from '@/features/editor/components/scene-metadata-drawer'
+import { SprintControl } from '@/features/editor/components/sprint-control'
 import { WordGoalControl } from '@/features/editor/components/word-goal-control'
 import { HandoffBanner } from '@/features/book-creator/components/handoff-banner'
 import { useDebouncedCallback } from '@/lib/hooks/use-debounced-callback'
@@ -573,6 +574,7 @@ export function EditorHome() {
                 {formatWordCount(bookWordCount)} words in this book
               </span>
               <WordGoalControl projectId={projectId ?? ''} />
+              <SprintControl bookWordCount={bookWordCount} />
               {activeScene && saveStatus === 'failed' && (
                 <span
                   role="alert"

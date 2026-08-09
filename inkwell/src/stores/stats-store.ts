@@ -21,6 +21,7 @@ interface StatsState {
    * if one is still open. */
   recordProgress: (projectId: string, wordsWritten: number) => Promise<void>
   setDailyTarget: (projectId: string | null, target: number) => Promise<void>
+  setDeadline: (projectId: string | null, deadline: number | null) => Promise<void>
   goalFor: (projectId: string | null) => Goal | undefined
 }
 
@@ -121,6 +122,27 @@ export const useStatsStore = create<StatsState>((set, get) => ({
       return
     }
     const created = await goalRepo.create({ projectId, dailyWordTarget: target, active: true })
+    set({ goals: [...get().goals, created] })
+  },
+
+  setDeadline: async (projectId, deadline) => {
+    const existing = get().goals.find((goal) => goal.projectId === projectId)
+    if (existing) {
+      await goalRepo.update(existing.id, { deadline })
+      set({
+        goals: get().goals.map((goal) =>
+          goal.id === existing.id ? { ...goal, deadline } : goal,
+        ),
+      })
+      return
+    }
+    // No goal record yet: a deadline implies one, at the default target.
+    const created = await goalRepo.create({
+      projectId,
+      dailyWordTarget: DEFAULT_DAILY_TARGET,
+      active: true,
+      deadline,
+    })
     set({ goals: [...get().goals, created] })
   },
 

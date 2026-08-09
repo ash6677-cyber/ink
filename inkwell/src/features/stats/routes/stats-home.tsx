@@ -1,3 +1,4 @@
+import { deadlineVerdict, project as projectFinish } from '@/features/stats/lib/projections'
 import { BarChart3, Flame, PenLine, Target } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
@@ -114,7 +115,7 @@ function DayChart({ totals, target }: { totals: DayTotal[]; target: number }) {
 
 export function StatsHome() {
   useDocumentTitle('Stats')
-  const { sessions, status, loadAll, setDailyTarget, goalFor } = useStatsStore()
+  const { sessions, status, loadAll, setDailyTarget, setDeadline, goalFor } = useStatsStore()
   const { projects, wordCounts, fetchProjects } = useProjectStore()
   const { toast } = useToast()
 
@@ -123,6 +124,10 @@ export function StatsHome() {
   // land on the same book instead of the all-projects rollup.
   const [searchParams] = useSearchParams()
   const [scope, setScope] = useState(searchParams.get('project') ?? 'all')
+  // Once per mount: projections work at day scale, and the purity rule is
+  // right that a fresh Date.now() every render is a re-render loop waiting
+  // to happen.
+  const [now] = useState(() => Date.now())
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -285,6 +290,86 @@ export function StatsHome() {
                     : `${(target - today).toLocaleString()} words to go.`}
               </p>
             </Card>
+
+            {scopeId !== null &&
+              (() => {
+                const scopedProject = projects.find((p) => p.id === scopeId)
+                if (!scopedProject || scopedProject.targetWordCount <= 0) return null
+                const written = wordCounts[scopeId] ?? 0
+                const paceTotals = dailyTotals(sessions, 14, scopeId)
+                const projection = projectFinish(
+                  written,
+                  scopedProject.targetWordCount,
+                  paceTotals,
+                  now,
+                )
+                const deadline = goalFor(scopeId)?.deadline ?? null
+                const verdict =
+                  deadline !== null
+                    ? deadlineVerdict(projection.wordsRemaining, projection.pace, deadline, now)
+                    : null
+                const dateValue =
+                  deadline !== null ? new Date(deadline).toISOString().slice(0, 10) : ''
+                return (
+                  <Card className="p-5">
+                    <div className="flex flex-wrap items-baseline justify-between gap-2">
+                      <h2 className="text-sm font-semibold">Finishing</h2>
+                      <p className="text-sm tabular-nums text-muted-foreground">
+                        {written.toLocaleString()} / {scopedProject.targetWordCount.toLocaleString()} words
+                      </p>
+                    </div>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      {projection.wordsRemaining === 0 ? (
+                        'The manuscript has reached its target. The rest is revision.'
+                      ) : projection.projectedFinish === null ? (
+                        'No writing in the last two weeks, so there is no honest pace to project from. One session fixes that.'
+                      ) : (
+                        <>
+                          At your two-week pace ({Math.round(projection.pace).toLocaleString()} words a
+                          day, quiet days included), you finish around{' '}
+                          <span className="font-medium text-foreground">
+                            {new Date(projection.projectedFinish).toLocaleDateString(undefined, {
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric',
+                            })}
+                          </span>
+                          .
+                        </>
+                      )}
+                    </p>
+                    <div className="mt-4 flex flex-wrap items-end gap-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="book-deadline">Deadline (optional)</Label>
+                        <Input
+                          id="book-deadline"
+                          type="date"
+                          value={dateValue}
+                          onChange={(e) => {
+                            const v = e.target.value
+                            void setDeadline(scopeId, v ? new Date(`${v}T12:00:00`).getTime() : null)
+                          }}
+                          className="w-44"
+                        />
+                      </div>
+                      {verdict && projection.wordsRemaining > 0 && (
+                        <p
+                          className={cn(
+                            'pb-2 text-sm',
+                            verdict.onPace ? 'text-emerald-500' : 'text-amber-500',
+                          )}
+                        >
+                          {verdict.daysLeft === 0
+                            ? `Due today — ${projection.wordsRemaining.toLocaleString()} words to go.`
+                            : `Needs ${verdict.requiredPace.toLocaleString()} words a day for ${verdict.daysLeft} days — ${
+                                verdict.onPace ? 'you are on pace.' : `your pace is ${Math.round(projection.pace).toLocaleString()}.`
+                              }`}
+                        </p>
+                      )}
+                    </div>
+                  </Card>
+                )
+              })()}
 
             <Card className="p-5">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
