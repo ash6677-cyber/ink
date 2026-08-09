@@ -5,6 +5,7 @@ import { AuthBridge } from '@/app/auth-bridge'
 import { DesktopBootGate } from '@/app/desktop-boot-gate'
 import { DesktopMenuBridge } from '@/app/desktop-menu-bridge'
 import { GlobalShortcuts } from '@/app/global-shortcuts'
+import { prefetchRoutesWhenIdle } from '@/app/prefetch-routes'
 import { ThemeProvider } from '@/app/providers/theme-provider'
 import { router } from '@/app/router'
 import { StorageGate } from '@/app/storage-gate'
@@ -29,6 +30,9 @@ export function App() {
     // it only grows while someone is writing, so once a session is the right
     // cadence and a timer would be noise.
     void sweepSnapshots()
+    // With boot done, warm the other screens' code in the background so
+    // moving around the app never pauses on a chunk download.
+    prefetchRoutesWhenIdle()
   }, [])
 
   return (

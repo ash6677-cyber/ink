@@ -277,6 +277,25 @@
 
   html {
     color-scheme: light;
+    /* Our pressed states do the talking; the OS's grey tap flash on top of
+       them reads as lag on a phone. */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Fire taps immediately. Without this, mobile browsers hold every tap on
+     an interactive element for ~300ms in case it's a double-tap zoom — the
+     single biggest "this feels clunky" tax a web app pays on a phone. */
+  a,
+  button,
+  input,
+  label,
+  select,
+  textarea,
+  [role='button'],
+  [role='tab'],
+  [role='menuitem'],
+  [role='option'] {
+    touch-action: manipulation;
   }
 
   html.dark {
@@ -540,4 +559,13 @@
   border-color: var(--page-edge-color);
   border-radius: var(--page-edge-radius);
   box-shadow: var(--page-edge-shadow);
+}
+
+/* The route loader holds its breath for a beat: a screen whose code is
+   already here (prefetched, cached) swaps in with no spinner flash, and
+   only a genuinely slow load ever shows one. */
+@keyframes route-loading-reveal {
+  to {
+    opacity: 1;
+  }
 }

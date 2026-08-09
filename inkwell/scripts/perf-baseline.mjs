@@ -52,16 +52,22 @@ page.on('request', (r) => {
   if (url.endsWith('.js') && url.includes('/assets/')) bootJs.push(url.split('/').pop())
 })
 await page.goto(`${BASE}#/projects`)
+// Boot is what the load event needed. The idle prefetcher then warms every
+// other screen in the background — deliberate, deferrable work that must
+// not be billed to the cold start it exists to protect.
+const bootSnapshot = [...bootJs]
 await page.waitForTimeout(4000)
 
 check(
   'signed-out cold start downloads no Firebase bytes',
   [],
+  // Judged over the full window on purpose: even the background warm-up
+  // must never touch a Firebase chunk while signed out.
   bootJs.filter((f) => /firebase/i.test(f)),
 )
 
 let gzTotal = 0
-for (const file of new Set(bootJs)) {
+for (const file of new Set(bootSnapshot)) {
   try {
     gzTotal += Number(execSync(`gzip -c '${DIST}${file}' | wc -c`).toString().trim())
   } catch {
