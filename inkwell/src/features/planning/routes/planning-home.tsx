@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { CorkboardView } from '@/features/planning/components/corkboard-view'
 import { LabelManagerDialog } from '@/features/planning/components/label-manager'
 import { StatusBoardView } from '@/features/planning/components/status-board-view'
+import { TimelineView } from '@/features/planning/components/timeline-view'
 import { projectRepo } from '@/lib/db/repositories'
 import { useEditorStore } from '@/stores/editor-store'
 import type { Project } from '@/types'
@@ -76,12 +77,16 @@ export function PlanningHome() {
           <TabsList className="mx-4 mt-3 w-fit">
             <TabsTrigger value="corkboard">Outline</TabsTrigger>
             <TabsTrigger value="status">Status board</TabsTrigger>
+            <TabsTrigger value="timeline">Timeline</TabsTrigger>
           </TabsList>
           <TabsContent value="corkboard" className="min-h-0 flex-1">
             <CorkboardView projectId={projectId} structureMode={structureMode} />
           </TabsContent>
           <TabsContent value="status" className="min-h-0 flex-1">
             <StatusBoardView projectId={projectId} />
+          </TabsContent>
+          <TabsContent value="timeline" className="min-h-0 flex-1">
+            <TimelineView projectId={projectId} />
           </TabsContent>
         </Tabs>
       )}

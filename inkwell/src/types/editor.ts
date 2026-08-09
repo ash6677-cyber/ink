@@ -63,6 +63,10 @@ export interface Scene extends BaseEntity {
   beats: SceneBeat[]
   labels: string[]
   linkedCodexIds: string[]
+  /** When this scene happens in story time, as an integer day on the
+   * writer's own scale (day 1, day 2, a flashback at day -30). Absent when
+   * unset — optional-by-absence, no migration; the timeline groups by it. */
+  storyDay?: number | null
 }
 
 export interface Snapshot extends BaseEntity {

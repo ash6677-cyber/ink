@@ -36,7 +36,7 @@ interface EditorStoreState {
   ) => Promise<void>
   updateSceneMeta: (
     id: string,
-    changes: Partial<Pick<Scene, 'status' | 'summary' | 'labels' | 'beats'>>,
+    changes: Partial<Pick<Scene, 'status' | 'summary' | 'labels' | 'beats' | 'storyDay'>>,
   ) => Promise<void>
   updateChapterStatus: (id: string, status: SceneStatus) => Promise<void>
 

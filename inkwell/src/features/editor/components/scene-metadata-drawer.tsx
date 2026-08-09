@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -170,6 +171,29 @@ export function SceneMetadataDrawer({
             }}
             placeholder="What happens in this scene? Used for planning and AI context later."
           />
+        </div>
+
+        <div className="grid gap-1.5">
+          <Label htmlFor="scene-story-day">Story day</Label>
+          <Input
+            id="scene-story-day"
+            type="number"
+            inputMode="numeric"
+            className="w-32"
+            value={scene.storyDay ?? ''}
+            onChange={(e) => {
+              const raw = e.target.value.trim()
+              const parsed = Math.trunc(Number(raw))
+              updateSceneMeta(scene.id, {
+                storyDay: raw === '' || Number.isNaN(parsed) ? null : parsed,
+              })
+            }}
+            placeholder="—"
+          />
+          <p className="text-xs text-muted-foreground">
+            When this scene happens in story time. Sets its place on the Planning timeline;
+            leave blank if it doesn't matter.
+          </p>
         </div>
 
         <div className="grid gap-1.5">
