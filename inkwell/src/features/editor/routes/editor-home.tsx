@@ -28,6 +28,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { VisuallyHidden } from '@/components/common/visually-hidden'
 import { AiAssistantPanel } from '@/features/editor/components/ai-assistant-panel'
 import { ProofreadPanel } from '@/features/editor/components/proofread-panel'
+import { ReadAloudButton } from '@/features/editor/components/read-aloud-button'
 import { ChapterSceneTree } from '@/features/editor/components/chapter-scene-tree'
 import { FindInScene } from '@/features/editor/components/find-in-scene'
 import { ManuscriptSearchPanel } from '@/features/editor/components/manuscript-search-panel'
@@ -653,6 +654,8 @@ export function EditorHome() {
                   <TooltipContent>Proofread scene</TooltipContent>
                 </Tooltip>
               )}
+
+              {activeScene && <ReadAloudButton text={activeScene.plainText} />}
 
               <Tooltip>
                 <TooltipTrigger asChild>
