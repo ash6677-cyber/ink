@@ -9,6 +9,7 @@ import {
   Search,
   Settings2,
   Sparkles,
+  SpellCheck,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
@@ -26,6 +27,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { VisuallyHidden } from '@/components/common/visually-hidden'
 import { AiAssistantPanel } from '@/features/editor/components/ai-assistant-panel'
+import { ProofreadPanel } from '@/features/editor/components/proofread-panel'
 import { ChapterSceneTree } from '@/features/editor/components/chapter-scene-tree'
 import { FindInScene } from '@/features/editor/components/find-in-scene'
 import { ManuscriptSearchPanel } from '@/features/editor/components/manuscript-search-panel'
@@ -115,6 +117,7 @@ export function EditorHome() {
   const [showMetadata, setShowMetadata] = useState(true)
   const [mobileMetadataOpen, setMobileMetadataOpen] = useState(false)
   const [aiPanelOpen, setAiPanelOpen] = useState(false)
+  const [proofreadOpen, setProofreadOpen] = useState(false)
   const [mobileTreeOpen, setMobileTreeOpen] = useState(false)
   const metadataVisible = isDesktop ? showMetadata : mobileMetadataOpen
   const [findOpen, setFindOpen] = useState(false)
@@ -635,6 +638,22 @@ export function EditorHome() {
                 </Tooltip>
               )}
 
+              {activeScene && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={proofreadOpen ? 'secondary' : 'ghost'}
+                      size="icon"
+                      onClick={() => setProofreadOpen(true)}
+                      aria-label="Proofread scene"
+                    >
+                      <SpellCheck className="size-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Proofread scene</TooltipContent>
+                </Tooltip>
+              )}
+
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -784,6 +803,15 @@ export function EditorHome() {
           openFind(query)
         }}
       />
+
+      {activeScene && (
+        <ProofreadPanel
+          open={proofreadOpen}
+          onOpenChange={setProofreadOpen}
+          scene={activeScene}
+          editor={liveEditor}
+        />
+      )}
     </div>
   )
 }
