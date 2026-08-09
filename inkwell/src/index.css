@@ -2,11 +2,7 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* `.reader-theme-light` rides along so the book viewer can pin itself to
-   the light palette regardless of the app theme: custom properties set on
-   the viewer's own element beat the ones inherited from `html.dark`. */
-:root,
-.reader-theme-light {
+:root {
   --radius: 0.7rem;
 
   /* The edge around the page you write on and the book you read. Themes
@@ -96,8 +92,7 @@
   --elevation-glow: 0 0 0 1px oklch(45% 0.22 290 / 0.16), 0 12px 28px -8px oklch(45% 0.22 290 / 0.34);
 }
 
-.dark,
-.reader-theme-dark {
+.dark {
   /* True dark mode — layered depth: sidebar (darkest) < background < card < popover < muted/accent */
   --background: oklch(13.5% 0.02 290);
   --foreground: oklch(93.5% 0.006 290);
@@ -573,14 +568,4 @@
   to {
     opacity: 1;
   }
-}
-
-/* The reader's private theme island: form controls, scrollbars and the
-   text-selection colour inside the viewer follow ITS palette, not the
-   app's. */
-.reader-theme-light {
-  color-scheme: light;
-}
-.reader-theme-dark {
-  color-scheme: dark;
 }

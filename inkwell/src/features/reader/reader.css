@@ -20,7 +20,9 @@
   --ink-soft: oklch(66% 0.008 80);
 }
 
-/* The viewer's own light switch outranks the app theme. The `:root`
+/* The viewer's own light switch re-skins THE PAGES AND NOTHING ELSE — by
+   explicit decision, the room around the book keeps the app's theme, so
+   light pages in a dark app read like a lamp on the paper. The `:root`
    prefix matches the dark rule's `:root.dark .book-reader` specificity,
    and declaration order settles the tie in the reader's favour. */
 :root .book-reader.reader-theme-light,
@@ -37,19 +39,6 @@
   --paper-edge: oklch(19% 0.008 70);
   --ink: oklch(88% 0.008 80);
   --ink-soft: oklch(66% 0.008 80);
-}
-
-/* The island paints its own OPAQUE ground. The utility gradient the screen
-   carries ends in a translucent stop, and whatever the app theme painted on
-   the body bled through it — so "Light pages" lightened the paper while the
-   room around the book stayed dark. */
-.book-reader.reader-theme-light,
-.book-reader.reader-theme-dark {
-  background: linear-gradient(
-    to bottom,
-    var(--background),
-    color-mix(in oklch, var(--muted) 30%, var(--background))
-  );
 }
 
 .book-stage {

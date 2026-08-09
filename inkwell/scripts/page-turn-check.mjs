@@ -156,9 +156,8 @@ check(
   brightness(palettes.paper) > brightness(paperBefore) + 60,
   `${paperBefore} → ${palettes.paper}`,
 )
-// The ground around the book must follow too — the field bug was a light
-// page floating in a dark room because the app's body wash bled through
-// the screen's translucent gradient.
+// By explicit decision the switch re-skins ONLY the paper: the ground
+// around the book keeps the app theme, like a reading lamp on the page.
 const ground = await page.evaluate(() => {
   const reader = document.querySelector('.book-reader')
   if (!reader) return ''
@@ -166,12 +165,12 @@ const ground = await page.evaluate(() => {
   return /oklch\([^)]+\)|rgba?\([^)]+\)/.exec(img)?.[0] ?? getComputedStyle(reader).backgroundColor
 })
 check(
-  '…and the ground around the book lightens with it',
+  '…while the ground around the book keeps the app theme',
   true,
-  brightness(ground) > 180,
+  brightness(ground) < 100,
   ground,
 )
-check('…while the app around the book stays dark', true, palettes.htmlIsDark)
+check('…and the app around the book stays dark', true, palettes.htmlIsDark)
 check(
   'the toggle now offers the way back',
   true,
