@@ -69,38 +69,55 @@ function DayChart({ totals, target }: { totals: DayTotal[]; target: number }) {
           date labels below, the target line would be drawn low enough that a
           510-word day would appear to clear a 500 target by a wide margin. */}
       <div className="relative h-44">
+        {/* Quarter-height gridlines: enough structure to read heights
+            against, faint enough to disappear behind the bars. */}
+        {[0.25, 0.5, 0.75].map((line) => (
+          <div
+            key={line}
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 border-t border-border/25"
+            style={{ top: `${line * 100}%` }}
+          />
+        ))}
         {target > 0 && (
           <div
             // Anchored by `top`, so the 1px border sits exactly on the target
             // value. Anchoring by `bottom` would put the box's lower edge
             // there and draw the line a pixel high.
-            className="pointer-events-none absolute inset-x-0 z-10 border-t border-dashed border-primary/60"
+            className="pointer-events-none absolute inset-x-0 z-10 border-t border-dashed border-primary/50"
             style={{ top: `${(1 - target / peak) * 100}%` }}
           >
-            <span className="absolute -top-2 right-0 bg-card px-1 text-[10px] font-medium text-primary">
+            <span className="absolute -top-2.5 right-0 rounded-full border border-primary/30 bg-card px-1.5 py-px text-[10px] font-medium tabular-nums text-primary">
               {target.toLocaleString()}
             </span>
           </div>
         )}
-        <div className="flex h-full items-end gap-[3px]">
+        <div className="flex h-full items-end justify-center gap-1 sm:gap-1.5">
           {totals.map((total) => {
             const met = target > 0 && total.words >= target
+            const height = Math.max((total.words / peak) * 100, total.words > 0 ? 2.5 : 0)
             return (
               <div
                 key={total.day}
                 title={`${dayLabel.format(total.day)} — ${total.words.toLocaleString()} words`}
-                className={cn(
-                  'min-h-[2px] flex-1 rounded-t-sm transition-[height] duration-300',
-                  met
-                    ? 'bg-emerald-500/85'
-                    : total.words > 0
-                      ? 'bg-primary/60'
-                      : 'bg-muted-foreground/15',
+                className="group relative flex h-full max-w-4 flex-1 items-end"
+              >
+                {total.words === 0 ? (
+                  // A quiet day is a dot on the baseline, not a stub
+                  // pretending to be writing.
+                  <span className="mx-auto mb-0 size-[3px] rounded-full bg-muted-foreground/25" />
+                ) : (
+                  <div
+                    className={cn(
+                      'w-full rounded-full transition-[height,filter] duration-300 group-hover:brightness-110',
+                      met
+                        ? 'bg-gradient-to-t from-emerald-600/90 via-emerald-500 to-emerald-300 shadow-[0_0_10px_-2px_oklch(69.6%_0.17_162.48)]'
+                        : 'bg-gradient-to-t from-primary/35 to-primary/80',
+                    )}
+                    style={{ height: `${height}%` }}
+                  />
                 )}
-                style={{
-                  height: `${Math.max((total.words / peak) * 100, total.words > 0 ? 3 : 1)}%`,
-                }}
-              />
+              </div>
             )
           })}
         </div>
