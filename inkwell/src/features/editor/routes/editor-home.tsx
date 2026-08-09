@@ -8,6 +8,7 @@ import {
   PanelRight,
   Search,
   Settings2,
+  ShieldCheck,
   Sparkles,
   SpellCheck,
 } from 'lucide-react'
@@ -27,6 +28,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { VisuallyHidden } from '@/components/common/visually-hidden'
 import { AiAssistantPanel } from '@/features/editor/components/ai-assistant-panel'
+import { ContinuityPanel } from '@/features/editor/components/continuity-panel'
 import { ProofreadPanel } from '@/features/editor/components/proofread-panel'
 import { ReadAloudButton } from '@/features/editor/components/read-aloud-button'
 import { ChapterSceneTree } from '@/features/editor/components/chapter-scene-tree'
@@ -119,6 +121,7 @@ export function EditorHome() {
   const [mobileMetadataOpen, setMobileMetadataOpen] = useState(false)
   const [aiPanelOpen, setAiPanelOpen] = useState(false)
   const [proofreadOpen, setProofreadOpen] = useState(false)
+  const [continuityOpen, setContinuityOpen] = useState(false)
   const [mobileTreeOpen, setMobileTreeOpen] = useState(false)
   const metadataVisible = isDesktop ? showMetadata : mobileMetadataOpen
   const [findOpen, setFindOpen] = useState(false)
@@ -655,6 +658,22 @@ export function EditorHome() {
                 </Tooltip>
               )}
 
+              {activeScene && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={continuityOpen ? 'secondary' : 'ghost'}
+                      size="icon"
+                      onClick={() => setContinuityOpen(true)}
+                      aria-label="Continuity check"
+                    >
+                      <ShieldCheck className="size-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Continuity check</TooltipContent>
+                </Tooltip>
+              )}
+
               {activeScene && <ReadAloudButton text={activeScene.plainText} />}
 
               <Tooltip>
@@ -813,6 +832,15 @@ export function EditorHome() {
           onOpenChange={setProofreadOpen}
           scene={activeScene}
           editor={liveEditor}
+        />
+      )}
+
+      {activeScene && (
+        <ContinuityPanel
+          open={continuityOpen}
+          onOpenChange={setContinuityOpen}
+          scene={activeScene}
+          codexEntries={codexEntries}
         />
       )}
     </div>
