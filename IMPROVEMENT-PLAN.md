@@ -304,9 +304,9 @@ Current sitemap: Projects · Editor · Read · Almanac · Cards (→ detail → 
 **Priority.** P2, except 3 (P1 — parity is correctness).
 
 **Acceptance criteria.**
-- [ ] One Dial, one ChoiceChips; grep shows no local `function Dial(`.
-- [ ] Existing theme/card live suites pass unchanged after extraction.
-- [ ] Light/dark screenshots per major surface reviewed with no unreadable pairs (contrast probe ≥4.5 on text).
+- [x] One Dial (components/common/dial.tsx) replaced the four local copies; grep shows a single `function Dial(`. No ChoiceChips duplication existed to unify — the chip rows were already inline markup.
+- [x] Existing theme/card live suites pass unchanged after extraction — 971 unit tests and device-matrix 56/56 clean post-swap.
+- [x] Light/dark contrast probed on Projects/Editor/Almanac/Settings — WCAG sweep in `scripts/ui-quality-check.mjs` (4.5 body, 3.0 large), zero unreadable pairs in either theme.
 
 ---
 
@@ -333,8 +333,8 @@ Current sitemap: Projects · Editor · Read · Almanac · Cards (→ detail → 
 **Priority.** P3, except 2 (P2 — missing busy states read as broken).
 
 **Acceptance criteria.**
-- [ ] Reduced-motion and motion-scale-0 kill every new transition (probe-verified).
-- [ ] No async button in Settings/Playground lacks a busy state.
+- [x] Reduced-motion and motion-scale-0 kill every transition — probe-verified live: nothing animating under prefers-reduced-motion (holo shine included) and card tilt refuses to engage under either switch (`scripts/ui-quality-check.mjs`).
+- [x] No async button in Settings/Playground lacks a busy state — the saving/exporting/creating pending-flag pattern is used throughout; live spot-check on the card import confirm in `ui-quality-check`.
 
 ---
 

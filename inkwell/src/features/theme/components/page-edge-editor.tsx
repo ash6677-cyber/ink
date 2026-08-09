@@ -1,4 +1,5 @@
 import { Label } from '@/components/ui/label'
+import { Dial } from '@/components/common/dial'
 import { Switch } from '@/components/ui/switch'
 import { ColorRow } from '@/features/theme/components/color-row'
 import { formatOklch, parseOklch } from '@/features/theme/lib/oklch'
@@ -18,42 +19,6 @@ interface PageEdgeEditorProps {
 
 const SOURCES: PageEdgeSource[] = ['primary', 'brand-2', 'accent', 'border', 'custom']
 
-function Dial({
-  label,
-  value,
-  min,
-  max,
-  step,
-  format,
-  onChange,
-}: {
-  label: string
-  value: number
-  min: number
-  max: number
-  step: number
-  format: (value: number) => string
-  onChange: (value: number) => void
-}) {
-  return (
-    <label className="flex items-center gap-2 text-xs">
-      <span className="w-24 shrink-0 text-muted-foreground">{label}</span>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        aria-label={label}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="h-1 flex-1 accent-primary"
-      />
-      <span className="w-12 shrink-0 text-right tabular-nums text-muted-foreground">
-        {format(value)}
-      </span>
-    </label>
-  )
-}
 
 /**
  * The edge around the page, and a piece of page to see it on.

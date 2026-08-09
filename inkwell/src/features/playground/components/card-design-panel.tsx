@@ -1,4 +1,5 @@
 import { Label } from '@/components/ui/label'
+import { Dial } from '@/components/common/dial'
 import {
   accentFor,
   applyPreset,
@@ -30,39 +31,6 @@ interface CardDesignPanelProps {
  *  is a colour the card could actually be. */
 const HUES = [15, 45, 75, 110, 150, 190, 220, 250, 285, 320, 345]
 
-function Dial({
-  label,
-  hint,
-  value,
-  onChange,
-}: {
-  label: string
-  hint?: string
-  value: number
-  onChange: (value: number) => void
-}) {
-  return (
-    <div className="space-y-0.5">
-      <label className="flex items-center gap-2 text-xs">
-        <span className="w-20 shrink-0 text-muted-foreground">{label}</span>
-        <input
-          type="range"
-          min={0}
-          max={1}
-          step={0.05}
-          value={value}
-          aria-label={label}
-          onChange={(e) => onChange(Number(e.target.value))}
-          className="h-1 flex-1 accent-primary"
-        />
-        <span className="w-10 shrink-0 text-right tabular-nums text-muted-foreground">
-          {Math.round(value * 100)}%
-        </span>
-      </label>
-      {hint && <p className="pl-[5.5rem] text-[11px] text-muted-foreground/80">{hint}</p>}
-    </div>
-  )
-}
 
 /**
  * How this character's card is cut, finished and coloured.
