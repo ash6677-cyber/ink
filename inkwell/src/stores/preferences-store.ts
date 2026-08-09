@@ -32,7 +32,14 @@ interface PreferencesState {
   /** Per-feature AI preset choices; a feature not in the map follows the
    * global default preset. */
   featurePresets: FeaturePresetMap
+  /**
+   * The book viewer's own light/dark choice, independent of the app theme —
+   * a writer working in a dark app can still read on paper-white pages.
+   * Null follows the app.
+   */
+  readerTheme: 'light' | 'dark' | null
   setEditorFont: (id: string) => void
+  setReaderTheme: (value: 'light' | 'dark' | null) => void
   setShortcutOverride: (id: ShortcutId, combo: string) => void
   setAutosaveDelayMs: (ms: number) => void
   setFeaturePreset: (feature: AiFeature, presetId: string | null) => void
@@ -58,7 +65,9 @@ export const usePreferencesStore = create<PreferencesState>()(
       shortcutOverrides: {},
       autosaveDelayMs: 800,
       featurePresets: {},
+      readerTheme: null,
       setEditorFont: (id) => set({ editorFont: id }),
+      setReaderTheme: (value) => set({ readerTheme: value }),
       setAutosaveDelayMs: (ms) => set({ autosaveDelayMs: Math.min(5000, Math.max(200, ms)) }),
       setFeaturePreset: (feature, presetId) =>
         set((s) => {

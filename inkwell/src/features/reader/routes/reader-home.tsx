@@ -5,7 +5,10 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { EmptyState } from '@/components/common/empty-state'
 import { Button } from '@/components/ui/button'
 import { BookStage } from '@/features/reader/components/book-stage'
+import { ReaderThemeToggle } from '@/features/reader/components/reader-theme-toggle'
 import { ShareBookDialog } from '@/features/reader/components/share-book-dialog'
+import { useReaderThemeClass } from '@/features/reader/lib/use-reader-theme'
+import { cn } from '@/lib/utils'
 import { compileBook } from '@/features/reader/lib/compile-book'
 import { cloudEnabled } from '@/lib/firebase/cloud-flags'
 import { projectRepo } from '@/lib/db/repositories'
@@ -45,6 +48,7 @@ export function ReaderHome() {
 
   const user = useAuthStore((s) => s.user)
   const [shareOpen, setShareOpen] = useState(false)
+  const readerThemeClass = useReaderThemeClass()
 
   if (!projectId) {
     return (
@@ -66,7 +70,12 @@ export function ReaderHome() {
   const noContent = status === 'ready' && book.length === 0
 
   return (
-    <div className="book-reader flex h-full flex-col bg-gradient-to-b from-background to-muted/30">
+    <div
+      className={cn(
+        'book-reader flex h-full flex-col bg-gradient-to-b from-background to-muted/30',
+        readerThemeClass,
+      )}
+    >
       <header className="flex shrink-0 items-center justify-between gap-3 px-4 py-3">
         <div className="min-w-0">
           <h1 className="truncate font-serif text-base font-semibold">
@@ -77,6 +86,7 @@ export function ReaderHome() {
           )}
         </div>
         <div className="flex shrink-0 items-center gap-2">
+          <ReaderThemeToggle />
           {/* Sharing is a cloud act: it needs an account to own the copy and
               a project to hold it. Signed out (or cloudless build), the
               button simply isn't there rather than being there and failing. */}

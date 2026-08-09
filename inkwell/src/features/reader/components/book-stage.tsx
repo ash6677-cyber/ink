@@ -2,7 +2,11 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
-import { BookView, type ReaderPage } from '@/features/reader/components/book-view'
+import {
+  BookView,
+  type BookViewHandle,
+  type ReaderPage,
+} from '@/features/reader/components/book-view'
 import { ChapterContent } from '@/features/reader/components/chapter-content'
 import { PageSurface, type PageMetrics } from '@/features/reader/components/page-surface'
 import type { BookChapter } from '@/features/reader/lib/compile-book'
@@ -51,6 +55,7 @@ export function BookStage({
   projectId: string
 }) {
   const stageRef = useRef<HTMLDivElement | null>(null)
+  const viewRef = useRef<BookViewHandle | null>(null)
   const [box, setBox] = useState({ width: 0, height: 0 })
 
   useEffect(() => {
@@ -118,6 +123,7 @@ export function BookStage({
       <div ref={stageRef} className="relative flex min-h-0 flex-1 items-center justify-center">
         {ready ? (
           <BookView
+            ref={viewRef}
             book={book}
             pageCounts={pageCounts}
             metrics={metrics}
@@ -166,7 +172,13 @@ export function BookStage({
             className="size-8 shrink-0 max-sm:size-11 pointer-coarse:size-11"
             aria-label="Previous page"
             disabled={pageIndex === 0}
-            onClick={() => setPageIndex(Math.max(0, pageIndex - columns))}
+            onClick={() => {
+              // Through the same spring-driven curl as a swipe — a button
+              // press earns the full page turn, not an instant swap. The
+              // fallback only fires if no leaf can exist (view not ready).
+              if (!viewRef.current?.turn('backward'))
+                setPageIndex(Math.max(0, pageIndex - columns))
+            }}
           >
             <ChevronLeft className="size-4" />
           </Button>
@@ -191,7 +203,10 @@ export function BookStage({
             className="size-8 shrink-0 max-sm:size-11 pointer-coarse:size-11"
             aria-label="Next page"
             disabled={pageIndex + columns >= flatPages.length}
-            onClick={() => setPageIndex(Math.min(flatPages.length - 1, pageIndex + columns))}
+            onClick={() => {
+              if (!viewRef.current?.turn('forward'))
+                setPageIndex(Math.min(flatPages.length - 1, pageIndex + columns))
+            }}
           >
             <ChevronRight className="size-4" />
           </Button>

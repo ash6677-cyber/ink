@@ -3,7 +3,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 
 import { BookStage } from '@/features/reader/components/book-stage'
+import { ReaderThemeToggle } from '@/features/reader/components/reader-theme-toggle'
 import { bookFromShared, fetchShare, type FetchedShare } from '@/features/reader/lib/share-book'
+import { useReaderThemeClass } from '@/features/reader/lib/use-reader-theme'
+import { cn } from '@/lib/utils'
 
 import '@/features/reader/reader.css'
 import { useDocumentTitle } from '@/lib/hooks/use-document-title'
@@ -17,6 +20,7 @@ import { useDocumentTitle } from '@/lib/hooks/use-document-title'
 export function SharedReader() {
   const { shareId = '' } = useParams()
   const [share, setShare] = useState<FetchedShare | null>(null)
+  const readerThemeClass = useReaderThemeClass()
 
   useEffect(() => {
     let cancelled = false
@@ -61,7 +65,12 @@ export function SharedReader() {
   }
 
   return (
-    <div className="book-reader flex h-dvh flex-col bg-gradient-to-b from-background to-muted/30">
+    <div
+      className={cn(
+        'book-reader flex h-dvh flex-col bg-gradient-to-b from-background to-muted/30',
+        readerThemeClass,
+      )}
+    >
       <header className="flex shrink-0 items-center justify-between gap-3 px-4 py-3">
         <div className="min-w-0">
           <h1 className="truncate font-serif text-base font-semibold">{share.meta.title}</h1>
@@ -69,9 +78,12 @@ export function SharedReader() {
             <p className="truncate text-xs text-muted-foreground">{share.meta.author}</p>
           )}
         </div>
-        <p className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
-          <Feather className="size-3.5" aria-hidden /> Shared from INKWELL
-        </p>
+        <div className="flex shrink-0 items-center gap-2">
+          <ReaderThemeToggle />
+          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Feather className="size-3.5" aria-hidden /> Shared from INKWELL
+          </p>
+        </div>
       </header>
 
       <BookStage book={book} title={share.meta.title} author={share.meta.author} projectId="" />

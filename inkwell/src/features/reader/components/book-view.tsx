@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
 
 import { ChapterContent } from '@/features/reader/components/chapter-content'
 import { CurlLeaf, type CurlHandle } from '@/features/reader/components/curl-leaf'
@@ -50,29 +50,40 @@ interface TurnState {
   backPage: number
 }
 
-export function BookView({
-  book,
-  pageCounts,
-  metrics,
-  columns,
-  pageIndex,
-  onPageIndexChange,
-  flatPages,
-  projectId,
-  title,
-  author,
-}: {
-  book: BookChapter[]
-  pageCounts: number[]
-  metrics: PageMetrics
-  columns: 1 | 2
-  pageIndex: number
-  onPageIndexChange: (index: number) => void
-  flatPages: ReaderPage[]
-  projectId: string
-  title: string
-  author: string
-}) {
+/** Lets the stage's footer buttons run the same animated turn as a swipe. */
+export interface BookViewHandle {
+  turn: (direction: Direction) => boolean
+}
+
+export const BookView = forwardRef<
+  BookViewHandle,
+  {
+    book: BookChapter[]
+    pageCounts: number[]
+    metrics: PageMetrics
+    columns: 1 | 2
+    pageIndex: number
+    onPageIndexChange: (index: number) => void
+    flatPages: ReaderPage[]
+    projectId: string
+    title: string
+    author: string
+  }
+>(function BookView(
+  {
+    book,
+    pageCounts,
+    metrics,
+    columns,
+    pageIndex,
+    onPageIndexChange,
+    flatPages,
+    projectId,
+    title,
+    author,
+  },
+  handleRef,
+) {
   const totalPages = flatPages.length
   const curlRef = useRef<CurlHandle | null>(null)
   const spineShadowRef = useRef<HTMLDivElement | null>(null)
@@ -214,17 +225,41 @@ export function BookView({
   }, [turn, paint])
 
   const jump = useCallback(
-    (direction: Direction) => {
-      if (!beginTurn(direction)) return
+    (direction: Direction): boolean => {
+      // Someone who has asked their device to reduce motion gets the page,
+      // not the theatre: an immediate turn with no sheet in flight.
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        if (direction === 'forward' ? !canGoForward : !canGoBackward) return false
+        const step = columns === 2 ? 2 : 1
+        onPageIndexChange(
+          direction === 'forward'
+            ? Math.min(totalPages - 1, leftPage + step)
+            : Math.max(0, leftPage - step),
+        )
+        return true
+      }
+      if (!beginTurn(direction)) return false
       // Given a push rather than released from rest, so a keyboard turn has
       // the same weight as a thrown one instead of creeping into motion.
       const forward = direction === 'forward'
       requestAnimationFrame(() =>
         settle(forward ? 1 : 0, forward ? NUDGE_VELOCITY : -NUDGE_VELOCITY),
       )
+      return true
     },
-    [beginTurn, settle],
+    [
+      beginTurn,
+      canGoBackward,
+      canGoForward,
+      columns,
+      leftPage,
+      onPageIndexChange,
+      settle,
+      totalPages,
+    ],
   )
+
+  useImperativeHandle(handleRef, () => ({ turn: jump }), [jump])
 
   /**
    * How much of the left edge belongs to the operating system.
@@ -439,4 +474,4 @@ export function BookView({
       )}
     </div>
   )
-}
+})
