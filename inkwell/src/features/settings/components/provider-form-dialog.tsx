@@ -169,7 +169,7 @@ export function ProviderFormDialog({ open, onOpenChange, provider, onSubmit }: P
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
+      <DialogContent className="max-w-lg">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>{provider ? 'Edit this connection' : 'Connect an AI'}</DialogTitle>

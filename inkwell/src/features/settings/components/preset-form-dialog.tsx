@@ -73,7 +73,7 @@ export function PresetFormDialog({ open, onOpenChange, preset, providers, onSubm
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg overflow-y-auto">
+      <DialogContent className="max-w-lg">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>{preset ? 'Edit preset' : 'New AI preset'}</DialogTitle>
