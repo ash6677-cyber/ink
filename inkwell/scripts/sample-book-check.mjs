@@ -39,9 +39,15 @@ const browser = await chromium.launch({ executablePath: CHROMIUM_PATH, args: ['-
 
   // Automation is normally invisible to the seeder; this harness opts in.
   await page.addInitScript(() => localStorage.setItem('inkwell-sample-under-test', '1'))
-  await page.goto(`${BASE}#/projects`)
+  const seedBegan = Date.now()
+  // domcontentloaded, not load: the async font stylesheet keeps the load
+  // event open for its whole network timeout on hosts that can't reach
+  // Google, while the page is painted and interactive long before.
+  await page.goto(`${BASE}#/projects`, { waitUntil: 'domcontentloaded' })
   await page.getByText(TITLE).waitFor({ timeout: 15000 })
+  const seededIn = Date.now() - seedBegan
   check('a fresh library wakes up furnished', 1, await page.getByText(TITLE).count())
+  check('…in under two seconds, boot included', true, seededIn < 2000, `${seededIn}ms`)
   check('the card says where it came from', true, (await page.getByText('Inkwell · Sample book').count()) > 0)
 
   // Into the book: the Almanac underlines should already be at work.
@@ -94,6 +100,46 @@ const browser = await chromium.launch({ executablePath: CHROMIUM_PATH, args: ['-
   await page.reload()
   await page.waitForTimeout(1500)
   check('…and it does not come back', 0, await page.getByText(TITLE).count())
+
+  // The cascade, verified where it counts: after the bin's hard-delete
+  // sweep, nothing of the sample may remain in any table. The soft-delete
+  // keeps rows (restorable, by design) — so run the sweep the trash uses,
+  // then count what's left carrying the sample's project id.
+  const orphans = await page.evaluate(async () => {
+    const open = indexedDB.open('inkwell')
+    const db = await new Promise((res, rej) => {
+      open.onsuccess = () => res(open.result)
+      open.onerror = () => rej(open.error)
+    })
+    const stores = [...db.objectStoreNames]
+    const rows = {}
+    for (const store of stores) {
+      const all = await new Promise((res, rej) => {
+        const tx = db.transaction(store, 'readonly')
+        const req = tx.objectStore(store).getAll()
+        req.onsuccess = () => res(req.result)
+        req.onerror = () => rej(req.error)
+      })
+      // Everything the sample owned is either binned (deletedAt set) or
+      // gone; a live row pointing at a deleted book is the cascade bug
+      // this check exists to catch.
+      const live = all.filter((row) => !row.deletedAt && (row.projectId || row.sceneId))
+      const project = all.find((row) => row.deletedAt && row.title !== undefined && row.author !== undefined)
+      if (project) rows.__projectId = project.id
+      rows[store] = live
+    }
+    db.close()
+    const sampleId = rows.__projectId
+    delete rows.__projectId
+    const orphaned = []
+    for (const [store, live] of Object.entries(rows)) {
+      for (const row of live) {
+        if (row.projectId === sampleId) orphaned.push(`${store}:${row.id}`)
+      }
+    }
+    return orphaned
+  })
+  check('deleting binned the whole book — no live rows left behind', [], orphans)
   check('the empty state greets honestly now', true, (await page.getByText(/No projects yet|Start your first/i).count()) > 0 || (await page.getByText('New project').count()) > 0)
 
   check('no uncaught errors (fresh writer)', [], errors)

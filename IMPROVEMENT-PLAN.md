@@ -605,8 +605,8 @@ Current sitemap: Projects · Editor · Read · Almanac · Cards (→ detail → 
 **Priority.** P2.
 
 **Acceptance criteria.**
-- [ ] Fresh profile: first-run appears; seeding the sample yields a browsable book, cast and cover in under 2s; deleting it bins everything (cascade verified).
-- [ ] Second launch: normal Projects screen.
+- [x] Fresh profile: first-run appears; seeding the sample yields a browsable book and cast in under 2s (594ms measured, boot included); deleting it bins everything — cascade verified at the table level, zero live rows left carrying the sample project (`scripts/sample-book-check.mjs`).
+- [x] Second launch: normal Projects screen — the harness reloads after deletion and the sample stays gone; an existing library is never offered the sample at all.
 
 ---
 

@@ -156,14 +156,16 @@ const cdp = await ctx.newCDPSession(tpage)
 await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 })
 
 const coldStartBegan = Date.now()
-await tpage.goto(`${BASE}#/projects`)
+// domcontentloaded: 'load' waits for the async font fetch's timeout on
+// Google-unreachable hosts; writers see the painted app long before.
+await tpage.goto(`${BASE}#/projects`, { waitUntil: 'domcontentloaded' })
 await tpage.getByText('The Big Book').waitFor({ timeout: 30000 })
 const coldStart = Date.now() - coldStartBegan
 if (!report('cold start to interactive Projects (4× throttle)', coldStart, 2500, 'ms')) misses.push('cold-start')
 
 // ── Editor open on the big book, 4× throttle ────────────────────────────────
 const editorBegan = Date.now()
-await tpage.goto(`${BASE}#/editor?project=${projectId}`)
+await tpage.goto(`${BASE}#/editor?project=${projectId}`, { waitUntil: 'domcontentloaded' })
 await tpage.locator('.editor-prose').first().waitFor({ timeout: 30000 })
 const editorOpen = Date.now() - editorBegan
 if (!report('editor open on the big book (4× throttle)', editorOpen, 1500, 'ms')) misses.push('editor-open')
@@ -182,7 +184,7 @@ const p95 = perKey[Math.floor(perKey.length * 0.95)]
 if (!report('keystroke round-trip p95 in a 2k-word scene', p95, 33, 'ms')) misses.push('keystroke')
 
 // ── Almanac filter over 200 entries ─────────────────────────────────────────
-await tpage.goto(`${BASE}#/almanac?project=${projectId}`)
+await tpage.goto(`${BASE}#/almanac?project=${projectId}`, { waitUntil: 'domcontentloaded' })
 await tpage.waitForTimeout(2000)
 const filterMs = await tpage.evaluate(async () => {
   const input = document.querySelector('input[placeholder="Search entries…"]')
@@ -198,7 +200,7 @@ if (filterMs < 0) console.log('SKIP · almanac filter (no search input found on 
 else if (!report('Almanac filter over 200 entries', filterMs, 100, 'ms')) misses.push('almanac-filter')
 
 // ── Card grid: long tasks while sweeping 60 cards ───────────────────────────
-await tpage.goto(`${BASE}#/playground/cards?project=${projectId}`)
+await tpage.goto(`${BASE}#/playground/cards?project=${projectId}`, { waitUntil: 'domcontentloaded' })
 await tpage.waitForTimeout(2500)
 await tpage.evaluate(() => {
   window.__longTasks = 0
