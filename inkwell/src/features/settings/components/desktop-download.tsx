@@ -42,14 +42,14 @@ export function DesktopDownload() {
   return (
     <section className="space-y-3 rounded-lg border border-border p-4">
       <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        Get the Windows app
+        Get the desktop app
       </Label>
       <p className="flex items-start gap-2 text-sm text-muted-foreground">
         <MonitorDown className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
         <span>
           Everything here works in the browser, but a browser can clear its own storage. The
-          Windows app saves your books as ordinary files on your computer, works with no internet
-          at all, and updates itself.
+          desktop app — Windows, Mac, or Linux — saves your books as ordinary files on your
+          computer and works with no internet at all. The Windows app also updates itself.
         </span>
       </p>
       <Button asChild size="sm" className="gap-1.5">

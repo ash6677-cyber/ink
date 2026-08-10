@@ -95,7 +95,7 @@ export function NavRail() {
                 <Download className="size-4 shrink-0" strokeWidth={1.9} />
                 {!collapsed && (
                   <span className="truncate">
-                    {isTauriRuntime() ? 'Windows app releases' : 'Get the Windows app'}
+                    {isTauriRuntime() ? 'Desktop app releases' : 'Get the desktop app'}
                   </span>
                 )}
               </ExternalLink>

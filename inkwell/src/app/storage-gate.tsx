@@ -100,7 +100,7 @@ export function StorageGate({ children }: { children: React.ReactNode }) {
             target="_blank"
             rel="noreferrer"
           >
-            Get the Windows app
+            Get the desktop app
           </a>
         </div>
       </div>

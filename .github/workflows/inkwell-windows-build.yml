@@ -1,3 +1,7 @@
+# Despite the file's historical name, this builds all three desktop apps:
+# Windows (NSIS, signed updater channel), macOS (DMG), and Linux
+# (AppImage + .deb). The Windows job is unchanged and battle-tested; the
+# other two attach their installers to the same release after it exists.
 name: Build INKWELL Windows Installer
 
 on:
@@ -183,16 +187,137 @@ jobs:
           # that is not ready to be offered to everyone must not become one.
           make_latest: true
           body: |
-            The Windows app for INKWELL.
+            The desktop apps for INKWELL.
 
-            Download `INKWELL_*_x64-setup.exe` below and run it. Windows will
-            warn about an unrecognised app the first time — the installer is
-            not certificate-signed yet, so choose **More info**, then
-            **Run anyway**.
+            **Windows** — download `INKWELL_*_x64-setup.exe` and run it.
+            Windows will warn about an unrecognised app the first time — the
+            installer is not certificate-signed yet, so choose **More info**,
+            then **Run anyway**. The Windows app updates itself from here.
 
-            Your books are saved as ordinary files on your computer, the app
-            works with no internet at all, and it updates itself from here.
+            **Mac** — download `INKWELL_*.dmg` (Apple Silicon). The app is
+            not notarized (signing costs money we don't spend), so the first
+            open needs: right-click the app → **Open** → **Open**. If macOS
+            still refuses, run `xattr -cr /Applications/INKWELL.app` once.
+
+            **Linux** — download the `.AppImage` (make it executable and run
+            it) or the `.deb` for Debian/Ubuntu.
+
+            Your books are saved as ordinary files on your computer, and the
+            app works with no internet at all. Auto-update is Windows-only
+            for now; Mac and Linux pick up new versions from this page.
           files: |
             inkwell/src-tauri/target/release/bundle/nsis/*.exe
             inkwell/src-tauri/target/release/bundle/nsis/*.sig
             inkwell/src-tauri/target/release/bundle/*.json
+
+  # ---------------------------------------------------------------- mac —
+  # Unsigned and un-notarized on purpose (signing costs money): the DMG
+  # works after an explicit right-click Open. Updater artifacts are off —
+  # latest.json only describes Windows, and a .sig nobody polls for is
+  # noise. Runs after the Windows job so the release exists to attach to.
+  build-mac:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/inkwell-v') || inputs.release_tag != ''
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: inkwell
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: inkwell/package-lock.json
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo registry and build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: inkwell/src-tauri -> target
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build DMG
+        run: |
+          echo '{"bundle":{"targets":["dmg"],"createUpdaterArtifacts":false}}' > mac.json
+          npm run desktop:build -- --config mac.json
+
+      - name: Upload DMG artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: INKWELL-macOS
+          path: inkwell/src-tauri/target/release/bundle/dmg/*.dmg
+          if-no-files-found: error
+
+      - name: Attach to the release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.release_tag || github.ref_name }}
+          target_commitish: ${{ github.sha }}
+          files: inkwell/src-tauri/target/release/bundle/dmg/*.dmg
+
+  # -------------------------------------------------------------- linux —
+  build-linux:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/inkwell-v') || inputs.release_tag != ''
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: inkwell
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Tauri system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file \
+            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: inkwell/package-lock.json
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo registry and build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: inkwell/src-tauri -> target
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build AppImage and deb
+        run: |
+          echo '{"bundle":{"targets":["appimage","deb"],"createUpdaterArtifacts":false}}' > linux.json
+          npm run desktop:build -- --config linux.json
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: INKWELL-Linux
+          path: |
+            inkwell/src-tauri/target/release/bundle/appimage/*.AppImage
+            inkwell/src-tauri/target/release/bundle/deb/*.deb
+          if-no-files-found: error
+
+      - name: Attach to the release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.release_tag || github.ref_name }}
+          target_commitish: ${{ github.sha }}
+          files: |
+            inkwell/src-tauri/target/release/bundle/appimage/*.AppImage
+            inkwell/src-tauri/target/release/bundle/deb/*.deb
