@@ -10,6 +10,7 @@ import {
   Plus,
   Redo2,
   RotateCw,
+  Sparkles,
   Star,
   Trash2,
   Undo2,
@@ -44,6 +45,7 @@ import { useObjectUrl } from '@/lib/hooks/use-object-url'
 import { storeImageFile } from '@/lib/image-upload'
 import { cn } from '@/lib/utils'
 import { useCoverStore } from '@/stores/cover-store'
+import { CoverConceptsDialog } from '@/features/covers/components/cover-concepts-dialog'
 import { useProjectStore } from '@/stores/project-store'
 import type { CoverAspectPreset, CoverTypographyLayer } from '@/types'
 import { useDocumentTitle } from '@/lib/hooks/use-document-title'
@@ -123,6 +125,7 @@ export function CoversHome() {
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [renameText, setRenameText] = useState('')
   const [uploading, setUploading] = useState(false)
+  const [conceptsOpen, setConceptsOpen] = useState(false)
   const [exporting, setExporting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -397,6 +400,20 @@ export function CoversHome() {
               {imageUrl ? 'Replace image' : 'Upload image'}
             </Button>
             <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full gap-1.5"
+              onClick={() => setConceptsOpen(true)}
+            >
+              <Sparkles className="size-3.5" /> AI concepts
+            </Button>
+            <CoverConceptsDialog
+              open={conceptsOpen}
+              onOpenChange={setConceptsOpen}
+              project={project}
+              onUseImage={(imageId) => setSourceImage(imageId)}
+            />
           </section>
 
           <section className="space-y-2">
