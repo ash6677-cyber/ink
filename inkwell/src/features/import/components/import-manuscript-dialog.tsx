@@ -64,18 +64,26 @@ export function ImportManuscriptDialog({ open, onOpenChange }: ImportManuscriptD
 
   async function handleFile(file: File | undefined) {
     if (!file) return
-    if (!kindForFile(file.name)) {
+    const kind = kindForFile(file.name)
+    if (!kind) {
       toast({
         title: 'That file type is not supported',
-        description: 'Word documents (.docx), Markdown (.md) and plain text (.txt).',
+        description:
+          'Word documents (.docx), Markdown (.md), plain text (.txt), or a zipped Scrivener project (.zip).',
         variant: 'destructive',
       })
       return
     }
     setReading(true)
     try {
-      const blocks = await readBlocks(file)
-      const detected = detectStructure(blocks)
+      let detected: DetectedManuscript
+      if (kind === 'scrivener') {
+        // The binder already says what the structure is; no guessing.
+        const { readScrivenerArchive } = await import('@/features/import/lib/scrivener')
+        detected = await readScrivenerArchive(file)
+      } else {
+        detected = detectStructure(await readBlocks(file))
+      }
       if (detected.chapters.length === 0) {
         toast({ title: 'There was no text in that file', variant: 'destructive' })
         return
@@ -129,7 +137,7 @@ export function ImportManuscriptDialog({ open, onOpenChange }: ImportManuscriptD
           <DialogDescription>
             {manuscript
               ? 'Here is the structure that was found. Nothing has been created yet.'
-              : 'A Word document, Markdown, or plain text.'}
+              : 'A Word document, Markdown, plain text, or a zipped Scrivener project.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -160,7 +168,9 @@ export function ImportManuscriptDialog({ open, onOpenChange }: ImportManuscriptD
             <span className="text-sm font-medium">
               {reading ? 'Reading…' : 'Choose a file, or drop one here'}
             </span>
-            <span className="text-xs text-muted-foreground">.docx · .md · .txt</span>
+            <span className="text-xs text-muted-foreground">
+              .docx · .md · .txt · Scrivener (.scriv, zipped)
+            </span>
           </button>
         ) : (
           <div className="space-y-4">

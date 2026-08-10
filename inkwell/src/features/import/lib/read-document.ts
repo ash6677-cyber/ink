@@ -14,17 +14,20 @@ import {
  * again from scratch.
  */
 
-export type SourceKind = 'markdown' | 'text' | 'docx'
+export type SourceKind = 'markdown' | 'text' | 'docx' | 'scrivener'
 
 export function kindForFile(name: string): SourceKind | null {
   const lower = name.toLowerCase()
   if (lower.endsWith('.docx')) return 'docx'
   if (lower.endsWith('.md') || lower.endsWith('.markdown')) return 'markdown'
   if (lower.endsWith('.txt')) return 'text'
+  // A Scrivener project is a folder; it arrives here zipped. Some zip
+  // tools keep the .scriv name, so both spellings are welcome.
+  if (lower.endsWith('.zip') || lower.endsWith('.scriv')) return 'scrivener'
   return null
 }
 
-export const ACCEPTED_EXTENSIONS = '.docx,.md,.markdown,.txt'
+export const ACCEPTED_EXTENSIONS = '.docx,.md,.markdown,.txt,.zip,.scriv'
 
 /** Word's own name for the styles that mean "this is a heading". */
 function headingLevelFrom(styleName: string | null): 1 | 2 | null {
