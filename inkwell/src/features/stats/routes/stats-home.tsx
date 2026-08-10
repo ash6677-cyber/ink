@@ -29,6 +29,7 @@ import {
 } from '@/stores/stats-store'
 import { ProseReportPanel } from '@/features/stats/components/prose-report-panel'
 import { TodayDigestCard } from '@/features/stats/components/today-digest-card'
+import { YearReviewDialog } from '@/features/stats/components/year-review-dialog'
 import { cn } from '@/lib/utils'
 import { useDocumentTitle } from '@/lib/hooks/use-document-title'
 
@@ -217,19 +218,25 @@ export function StatsHome() {
         title="Stats"
         description="Word-count goals, streaks, and session history."
         actions={
-          <Select value={scope} onValueChange={setScope}>
-            <SelectTrigger className="w-56" aria-label="Which projects to count">
-              <SelectValue placeholder="All projects" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All projects</SelectItem>
-              {projects.map((project) => (
-                <SelectItem key={project.id} value={project.id}>
-                  {project.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <YearReviewDialog
+              sessions={sessions}
+              authorName={projects.find((p) => p.id === scopeId)?.author ?? null}
+            />
+            <Select value={scope} onValueChange={setScope}>
+              <SelectTrigger className="w-56" aria-label="Which projects to count">
+                <SelectValue placeholder="All projects" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All projects</SelectItem>
+                {projects.map((project) => (
+                  <SelectItem key={project.id} value={project.id}>
+                    {project.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         }
       />
 
