@@ -34,7 +34,11 @@ const eventually = async (p, t = 15000) => {
   }
 }
 
-// A real 1×1 PNG, twice — the two "concepts".
+// A real 1×1 PNG, twice — the two "concepts". This is a STAND-IN, not AI
+// output: the mock provider exists so the harness never spends real API
+// money. It renders as a solid colour block, which proves the plumbing
+// (request → images → Use as cover) and says nothing about art quality —
+// that belongs entirely to the writer's own image model.
 const TINY_PNG_B64 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
 
