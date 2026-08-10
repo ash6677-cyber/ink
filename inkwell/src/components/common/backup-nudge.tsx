@@ -29,6 +29,8 @@ export function BackupNudge() {
   const snoozedUntil = usePreferencesStore((s) => s.backupSnoozedUntil)
   const markBackedUp = usePreferencesStore((s) => s.markBackedUp)
   const snooze = usePreferencesStore((s) => s.snoozeBackupReminder)
+  const autoBackupEnabled = usePreferencesStore((s) => s.autoBackupEnabled)
+  const setAutoBackupEnabled = usePreferencesStore((s) => s.setAutoBackupEnabled)
   const { toast } = useToast()
 
   const [visible, setVisible] = useState(false)
@@ -42,7 +44,10 @@ export function BackupNudge() {
     let cancelled = false
     void (async () => {
       const now = Date.now()
+      // The weekly ritual makes the reminder redundant; it stays quiet —
+      // and hides itself if it was up when the ritual got switched on.
       const due =
+        !autoBackupEnabled &&
         now > snoozedUntil &&
         (lastBackupAt === null || now - lastBackupAt > REMIND_AFTER_DAYS * 86_400_000)
       if (!due) {
@@ -62,7 +67,7 @@ export function BackupNudge() {
     return () => {
       cancelled = true
     }
-  }, [lastBackupAt, snoozedUntil])
+  }, [lastBackupAt, snoozedUntil, autoBackupEnabled])
 
   if (!visible) return null
 
@@ -101,6 +106,21 @@ export function BackupNudge() {
             <Button size="sm" onClick={handleExport} disabled={busy} className="h-8 gap-1.5 max-sm:h-11 pointer-coarse:h-11">
               {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
               Back up now
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 gap-1.5 max-sm:h-11 pointer-coarse:h-11"
+              onClick={() => {
+                setAutoBackupEnabled(true)
+                setVisible(false)
+                toast({
+                  title: 'Weekly backups are on',
+                  description: 'A backup file will save itself once a week from now on.',
+                })
+              }}
+            >
+              Do this weekly, automatically
             </Button>
             <Button size="sm" variant="ghost" className="h-8 max-sm:h-11 pointer-coarse:h-11" onClick={() => snooze(SNOOZE_DAYS)}>
               Later

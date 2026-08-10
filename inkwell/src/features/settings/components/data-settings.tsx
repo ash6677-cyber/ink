@@ -10,6 +10,9 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { DesktopDownload } from '@/features/settings/components/desktop-download'
+import { Switch } from '@/components/ui/switch'
+import { nextAutoBackupAt } from '@/lib/db/auto-backup'
+import { usePreferencesStore } from '@/stores/preferences-store'
 import { LibraryCheck } from '@/features/settings/components/library-check'
 import {
   Dialog,
@@ -45,6 +48,16 @@ export function DataSettings() {
   const [backups, setBackups] = useState<BackupInfo[]>([])
   const [loadingBackups, setLoadingBackups] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const autoBackupEnabled = usePreferencesStore((s) => s.autoBackupEnabled)
+  const setAutoBackupEnabled = usePreferencesStore((s) => s.setAutoBackupEnabled)
+  const lastAutoBackupAt = usePreferencesStore((s) => s.lastAutoBackupAt)
+  // Read once per render pass; the blurb is a rough date, not a clock.
+  const [settingsNow] = useState(() => Date.now())
+  const nextRunAt = nextAutoBackupAt({
+    enabled: autoBackupEnabled,
+    lastAutoBackupAt,
+    now: settingsNow,
+  })
   const [pendingRestore, setPendingRestore] = useState<BackupInfo | null>(null)
   const [restoring, setRestoring] = useState(false)
   const setPendingImportPath = useImportStore((s) => s.setPendingPath)
@@ -132,7 +145,27 @@ export function DataSettings() {
         {/* Worth more here than on the desktop build, not less: a browser
             library has no folder of files to inspect, so this is the only
             way to ask whether it is all still there. */}
-        <LibraryCheck />
+        <section>
+        <h2 className="text-sm font-semibold">Weekly automatic backup</h2>
+        <div className="mt-2 flex items-start justify-between gap-4">
+          <p className="text-xs text-muted-foreground">
+            Once a week, save the whole library on its own —{' '}
+            {isTauriRuntime()
+              ? 'a snapshot into the backups folder below.'
+              : 'a backup file straight into your downloads.'}{' '}
+            {autoBackupEnabled && nextRunAt !== null && (
+              <>Next one {nextRunAt <= settingsNow ? 'on your next visit' : `around ${new Date(nextRunAt).toLocaleDateString()}`}.</>
+            )}
+          </p>
+          <Switch
+            checked={autoBackupEnabled}
+            onCheckedChange={setAutoBackupEnabled}
+            aria-label="Weekly automatic backup"
+          />
+        </div>
+      </section>
+
+      <LibraryCheck />
         <TrashSettings />
       </div>
     )
@@ -169,6 +202,23 @@ export function DataSettings() {
       </section>
 
       <LibraryCheck />
+
+      <section>
+        <h2 className="text-sm font-semibold">Weekly automatic backup</h2>
+        <div className="mt-2 flex items-start justify-between gap-4">
+          <p className="text-xs text-muted-foreground">
+            Once a week, save a snapshot into the backups folder below on its own.
+            {autoBackupEnabled && nextRunAt !== null && (
+              <> Next one {nextRunAt <= settingsNow ? 'on your next visit' : `around ${new Date(nextRunAt).toLocaleDateString()}`}.</>
+            )}
+          </p>
+          <Switch
+            checked={autoBackupEnabled}
+            onCheckedChange={setAutoBackupEnabled}
+            aria-label="Weekly automatic backup"
+          />
+        </div>
+      </section>
 
       <section>
         <div className="flex items-center justify-between">

@@ -15,6 +15,10 @@ interface PreferencesState {
   dimInactiveParagraphs: boolean
   /** When the whole library was last exported to a file, or null if never. */
   lastBackupAt: number | null
+  /** The weekly automatic backup: off unless the writer opts in. */
+  autoBackupEnabled: boolean
+  /** When the weekly ritual last ran, or null if it never has. */
+  lastAutoBackupAt: number | null
   /** Epoch ms until which the backup reminder stays hidden. */
   backupSnoozedUntil: number
   /** The format the last manuscript export used. The next one starts there. */
@@ -51,6 +55,8 @@ interface PreferencesState {
   setTypewriterMode: (value: boolean) => void
   setDimInactiveParagraphs: (value: boolean) => void
   markBackedUp: () => void
+  setAutoBackupEnabled: (value: boolean) => void
+  markAutoBackedUp: () => void
   rememberExportFormat: (format: string) => void
   snoozeBackupReminder: (days: number) => void
   markSampleBookOffered: () => void
@@ -63,6 +69,8 @@ export const usePreferencesStore = create<PreferencesState>()(
       typewriterMode: false,
       dimInactiveParagraphs: false,
       lastBackupAt: null,
+      autoBackupEnabled: false,
+      lastAutoBackupAt: null,
       backupSnoozedUntil: 0,
       lastExportFormat: null,
       sampleBookOffered: false,
@@ -98,6 +106,10 @@ export const usePreferencesStore = create<PreferencesState>()(
       setTypewriterMode: (value) => set({ typewriterMode: value }),
       setDimInactiveParagraphs: (value) => set({ dimInactiveParagraphs: value }),
       markBackedUp: () => set({ lastBackupAt: Date.now(), backupSnoozedUntil: 0 }),
+      setAutoBackupEnabled: (value) => set({ autoBackupEnabled: value }),
+      // An automatic backup is a backup: it satisfies the reminder too.
+      markAutoBackedUp: () =>
+        set({ lastAutoBackupAt: Date.now(), lastBackupAt: Date.now(), backupSnoozedUntil: 0 }),
       rememberExportFormat: (format) => set({ lastExportFormat: format }),
       snoozeBackupReminder: (days) =>
         set({ backupSnoozedUntil: Date.now() + days * 24 * 60 * 60 * 1000 }),

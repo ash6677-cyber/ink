@@ -10,6 +10,7 @@ import { ThemeProvider } from '@/app/providers/theme-provider'
 import { router } from '@/app/router'
 import { StorageGate } from '@/app/storage-gate'
 import { ThemeBridge } from '@/app/theme-bridge'
+import { AutoBackupRitual } from '@/components/common/auto-backup-ritual'
 import { BackupNudge } from '@/components/common/backup-nudge'
 import { ImportConfirmDialog } from '@/components/common/import-confirm-dialog'
 import { Toaster } from '@/components/ui/toaster'
@@ -46,6 +47,7 @@ export function App() {
             <GlobalShortcuts />
             <ImportConfirmDialog />
             <BackupNudge />
+            <AutoBackupRitual />
             <AuthBridge />
           </StorageGate>
         </DesktopBootGate>
