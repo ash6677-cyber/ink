@@ -30,7 +30,7 @@ interface ChatStoreState {
   createChat: (
     projectId: string,
     cardId: string,
-    opts: { title: string; firstMessage: string },
+    opts: { title: string; firstMessage: string; sceneId?: string | null; mode?: ChatMode },
   ) => Promise<CardChat>
   renameChat: (id: string, title: string) => Promise<void>
   deleteChat: (id: string) => Promise<void>
@@ -80,16 +80,17 @@ export const useChatStore = create<ChatStoreState>((set, get) => ({
     }
   },
 
-  createChat: async (projectId, cardId, { title, firstMessage }) => {
+  createChat: async (projectId, cardId, { title, firstMessage, sceneId, mode }) => {
     const messages = firstMessage.trim() ? [nowMessage('assistant', firstMessage.trim())] : []
     const chat = await cardChatRepo.create({
       cardId,
       projectId,
-      mode: 'roleplay',
+      mode: mode ?? 'roleplay',
       title,
       personaId: null,
       aiPresetId: null,
       messages,
+      sceneId: sceneId ?? null,
     })
     set({ chats: [chat, ...get().chats] })
     return chat

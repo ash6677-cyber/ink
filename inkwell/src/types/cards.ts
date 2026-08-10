@@ -91,6 +91,9 @@ export interface CardChat extends BaseEntity {
   personaId: string | null
   aiPresetId: string | null
   messages: ChatMessage[]
+  /** When set, this chat is a discussion of one scene: its prose rides in
+   * the prompt. Absent on every chat made before scene discussions existed. */
+  sceneId?: string | null
 }
 
 export interface Persona extends BaseEntity {

@@ -47,6 +47,7 @@ import { playgroundPath } from '@/features/playground/lib/playground-nav'
 import { AiFailureNotice } from '@/components/common/ai-failure-notice'
 import { ContextPreview } from '@/components/common/context-preview'
 import { buildChatPrompt } from '@/lib/ai/chat-prompt-builder'
+import { scenePassage } from '@/features/playground/lib/scene-interview'
 import { resolveProvider } from '@/lib/ai/resolve-provider'
 import { useAiGeneration } from '@/lib/ai/use-ai-generation'
 import { useStoryScenes } from '@/lib/hooks/use-story-scenes'
@@ -170,6 +171,14 @@ export function CardChat() {
     ? codexEntries.find((e) => e.id === card.codexEntryId)
     : undefined
 
+  // A scene-discussion chat carries its scene into every prompt.
+  const discussedScene = activeChat?.sceneId
+    ? scenes.find((s) => s.id === activeChat.sceneId)
+    : undefined
+  const discussScene = discussedScene
+    ? { title: discussedScene.title, text: scenePassage(discussedScene.plainText, 1400) }
+    : null
+
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight })
   }, [activeChat?.messages.length, output])
@@ -197,6 +206,7 @@ export function CardChat() {
       history,
       scenes,
       aliases: linkedEntry?.aliases ?? [],
+      discussScene,
     })
     const finalText = await generate({
       provider,
@@ -525,6 +535,18 @@ export function CardChat() {
             </div>
           ) : (
             <>
+              {discussedScene && (
+                <div
+                  data-discussing-banner
+                  className="flex items-center gap-2 border-b border-border bg-accent/40 px-4 py-2 text-xs text-muted-foreground"
+                >
+                  <BookMarked className="size-3.5 shrink-0 text-primary" aria-hidden />
+                  <span className="truncate">
+                    Discussing <strong className="text-foreground">{discussedScene.title}</strong>
+                    {' — '}the scene rides along in {card.displayName}'s context.
+                  </span>
+                </div>
+              )}
               <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-6">
                 {activeChat.messages.length === 0 ? (
                   <p className="py-10 text-center text-sm text-muted-foreground">
@@ -750,6 +772,9 @@ export function CardChat() {
                   lorebooks,
                   preset,
                   history: activeChat.messages,
+                  scenes,
+                  aliases: linkedEntry?.aliases ?? [],
+                  discussScene,
                 }).plan
               }
             />

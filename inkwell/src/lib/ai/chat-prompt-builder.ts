@@ -26,6 +26,9 @@ export interface ChatPromptInput {
   scenes?: StoryScene[]
   /** Names the character answers to in the prose, beyond their card name. */
   aliases?: string[]
+  /** A specific scene the author brought to talk over: its prose rides in
+   * the prompt so the character has actually "read" it. */
+  discussScene?: { title: string; text: string } | null
 }
 
 export interface BuiltChatPrompt {
@@ -160,7 +163,7 @@ function buildCharacterSystemPrompt(
 }
 
 export function buildChatPrompt(input: ChatPromptInput): BuiltChatPrompt {
-  const { card, chat, persona, lorebooks, preset, history, scenes, aliases } = input
+  const { card, chat, persona, lorebooks, preset, history, scenes, aliases, discussScene } = input
 
   const characterPrompt = buildCharacterSystemPrompt(card, persona, chat.mode)
 
@@ -198,6 +201,12 @@ export function buildChatPrompt(input: ChatPromptInput): BuiltChatPrompt {
   const lorebookContext = lorebookPlan.text
 
   const systemParts = [characterPrompt]
+  if (discussScene?.text) {
+    systemParts.push(
+      `The author has brought one scene to talk over with you — "${discussScene.title}". ` +
+        `You were there (or it concerns you); speak from inside it. The scene:\n\n${discussScene.text}`,
+    )
+  }
   if (storyDigest.text) systemParts.push(`What has happened to you in the book so far:\n${storyDigest.text}`)
   if (lorebookContext) systemParts.push(`World info:\n${lorebookContext}`)
   if (preset.systemPrompt.trim()) systemParts.push(preset.systemPrompt.trim())
@@ -216,6 +225,13 @@ export function buildChatPrompt(input: ChatPromptInput): BuiltChatPrompt {
     items.push(
       contextItem('persona', `Who you are (${persona.name})`, persona.description || persona.name, {
         source: 'Persona',
+      }),
+    )
+  }
+  if (discussScene?.text) {
+    items.push(
+      contextItem('discuss-scene', `The scene under discussion (“${discussScene.title}”)`, discussScene.text, {
+        source: 'The manuscript',
       }),
     )
   }

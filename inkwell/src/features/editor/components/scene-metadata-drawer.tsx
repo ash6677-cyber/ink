@@ -16,6 +16,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { formatRelativeTime, formatWordCount } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { useEditorStore } from '@/stores/editor-store'
+import { DiscussSceneSection } from '@/features/editor/components/discuss-scene-section'
 import { SnapshotDiffDialog } from '@/features/editor/components/snapshot-diff-dialog'
 import type { Scene, SceneBeat, SceneStatus, Snapshot } from '@/types'
 
@@ -195,6 +196,8 @@ export function SceneMetadataDrawer({
             leave blank if it doesn't matter.
           </p>
         </div>
+
+        <DiscussSceneSection scene={scene} />
 
         <div className="grid gap-1.5">
           <div className="flex items-center justify-between">
