@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { appendSprintResult } from '@/features/stats/lib/daily-digest'
 import { cn } from '@/lib/utils'
 
 /**
@@ -42,7 +43,13 @@ function formatLeft(ms: number): string {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
-export function SprintControl({ bookWordCount }: { bookWordCount: number }) {
+export function SprintControl({
+  bookWordCount,
+  projectId,
+}: {
+  bookWordCount: number
+  projectId?: string | null
+}) {
   const [setupOpen, setSetupOpen] = useState(false)
   const [minutes, setMinutes] = useState(25)
   const [goalDraft, setGoalDraft] = useState('')
@@ -69,12 +76,23 @@ export function SprintControl({ bookWordCount }: { bookWordCount: number }) {
   }, [sprint, msLeft <= 0])
 
   function finish(state: SprintState) {
-    setSummary({
-      words: Math.max(0, wordsRef.current - state.startWords),
-      minutes: Math.round(state.totalMs / 60000),
-      goal: state.goal,
-    })
+    const words = Math.max(0, wordsRef.current - state.startWords)
+    const elapsed = Math.min(state.totalMs, state.totalMs - (state.endsAt - Date.now()))
+    const minutes = Math.max(1, Math.round(elapsed / 60000))
+    setSummary({ words, minutes: Math.round(state.totalMs / 60000), goal: state.goal })
     setSprint(null)
+    // The outcome (not the sprint itself) is kept, so the day's digest can
+    // name your best sprint. Storage failures are non-events here.
+    try {
+      appendSprintResult(window.localStorage, {
+        words,
+        minutes,
+        endedAt: Date.now(),
+        projectId: projectId ?? null,
+      })
+    } catch {
+      /* private mode or full storage — the sprint still counted in stats */
+    }
   }
 
   function start() {

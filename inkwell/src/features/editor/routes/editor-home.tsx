@@ -581,7 +581,7 @@ export function EditorHome() {
                 {formatWordCount(bookWordCount)} words in this book
               </span>
               <WordGoalControl projectId={projectId ?? ''} />
-              <SprintControl bookWordCount={bookWordCount} />
+              <SprintControl bookWordCount={bookWordCount} projectId={projectId} />
               {activeScene && saveStatus === 'failed' && (
                 <span
                   role="alert"

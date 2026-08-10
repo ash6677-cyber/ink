@@ -28,6 +28,7 @@ import {
   type DayTotal,
 } from '@/stores/stats-store'
 import { ProseReportPanel } from '@/features/stats/components/prose-report-panel'
+import { TodayDigestCard } from '@/features/stats/components/today-digest-card'
 import { cn } from '@/lib/utils'
 import { useDocumentTitle } from '@/lib/hooks/use-document-title'
 
@@ -281,6 +282,8 @@ export function StatsHome() {
                 hint="words logged since you started"
               />
             </div>
+
+            <TodayDigestCard sessions={sessions} projectId={scopeId} />
 
             <Card className="p-5">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
