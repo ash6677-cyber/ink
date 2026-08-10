@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 
 import { ConfirmDeleteDialog } from '@/components/common/confirm-delete-dialog'
 import { EmptyState } from '@/components/common/empty-state'
+import { ClaimGuestLibraryBanner } from '@/components/common/claim-guest-library-banner'
 import { PageHeader } from '@/components/common/page-header'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -127,6 +128,7 @@ export function ProjectsHome() {
       />
 
       <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <ClaimGuestLibraryBanner />
         {status === 'loading' || status === 'idle' ? (
           <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(20rem,1fr))]">
             {Array.from({ length: 3 }).map((_, i) => (

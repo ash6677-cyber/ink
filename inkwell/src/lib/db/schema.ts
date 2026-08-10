@@ -24,6 +24,7 @@ import type {
 import { syncEngine } from '@/lib/sync/sync-engine'
 import { createSyncedTable } from '@/lib/sync/synced-table'
 
+import { libraryDbName, readActiveLibrary } from './active-library'
 import type { TableLike } from './repository'
 import { createTrashableTable, type TrashableTable } from './soft-delete'
 import { isTauriRuntime } from './tauri-bridge'
@@ -49,8 +50,8 @@ export class InkwellDB extends Dexie {
   manuscriptTemplates!: EntityTable<ManuscriptTemplate, 'id'>
   themes!: EntityTable<Theme, 'id'>
 
-  constructor() {
-    super('inkwell')
+  constructor(name = 'inkwell') {
+    super(name)
 
     this.version(1).stores({
       projects: 'id, seriesId, status, updatedAt',
@@ -112,9 +113,16 @@ type RawDbTables = Record<keyof DbTables, TableLike<BaseEntity>>
 /** Browser build (web) reads/writes IndexedDB via Dexie; the desktop build
  * (Tauri) never touches Dexie at all — it uses an in-memory store that's
  * hydrated from and persisted to a real file on disk. Every store and
- * component goes through `db.<table>` exactly the same way either way. */
+ * component goes through `db.<table>` exactly the same way either way.
+ *
+ * Which library opens is decided here, before anything reads a row: each
+ * account has its own database (and its own file on desktop), the guest
+ * library keeps the original name, and the auth bridge reloads the app
+ * whenever the signed-in account changes so no cache outlives a switch. */
 function createRawDbTables(): RawDbTables {
-  return (isTauriRuntime() ? tauriTables : new InkwellDB()) as unknown as RawDbTables
+  if (isTauriRuntime()) return tauriTables as unknown as RawDbTables
+  const active = typeof localStorage === 'undefined' ? 'guest' : readActiveLibrary(localStorage)
+  return new InkwellDB(libraryDbName(active)) as unknown as RawDbTables
 }
 
 /**

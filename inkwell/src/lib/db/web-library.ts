@@ -62,13 +62,20 @@ export const BACKED_UP_TABLES = [
  */
 export const HANDLED_SEPARATELY = ['imageAssets', 'aiProviders'] as const
 
-export async function buildLibraryDocument(): Promise<LibraryDocument> {
+/** Any set of tables that can hand over their rows — the live library by
+ * default, but also another library opened read-only (the claim flow reads
+ * the guest library this way while an account's own library is active). */
+export type ReadableTables = Record<string, { toArray(): Promise<unknown[]> }>
+
+export async function buildLibraryDocument(
+  tables: ReadableTables = db as unknown as ReadableTables,
+): Promise<LibraryDocument> {
   const doc = emptyLibrary()
   doc.schemaVersion = CURRENT_SCHEMA_VERSION
 
   await Promise.all(
     BACKED_UP_TABLES.map(async (name) => {
-      const rows = await db[name].toArray()
+      const rows = await tables[name].toArray()
       ;(doc as unknown as Record<string, unknown>)[name] = rows
     }),
   )
@@ -79,7 +86,7 @@ export async function buildLibraryDocument(): Promise<LibraryDocument> {
   // gets emailed to oneself.
   doc.aiProviders = []
 
-  const assets = (await db.imageAssets.toArray()) as ImageAsset[]
+  const assets = (await tables.imageAssets.toArray()) as ImageAsset[]
   doc.imageAssets = await Promise.all(
     assets.map(
       async (asset): Promise<StoredImageAsset> => ({

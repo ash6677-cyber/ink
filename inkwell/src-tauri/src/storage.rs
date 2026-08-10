@@ -21,8 +21,38 @@ fn data_dir(app: &AppHandle) -> Result<PathBuf, String> {
     Ok(base.join(APP_FOLDER_NAME))
 }
 
-fn library_path(app: &AppHandle) -> Result<PathBuf, String> {
-    Ok(data_dir(app)?.join(LIBRARY_FILE_NAME))
+/// Only letters, digits, dashes and underscores may name a library file —
+/// the name arrives from the webview, and a path separator in it would let
+/// a compromised frontend read or write outside the app folder.
+fn sanitize_library(library: &Option<String>) -> Option<String> {
+    let name = library.as_deref()?.trim();
+    if name.is_empty() || name.len() > 160 {
+        return None;
+    }
+    if name.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_') {
+        Some(name.to_string())
+    } else {
+        None
+    }
+}
+
+/// Every account keeps its own library file; `None` (or an unusable name)
+/// is the original `library.json`, so existing installs open untouched.
+fn library_path(app: &AppHandle, library: &Option<String>) -> Result<PathBuf, String> {
+    let file = match sanitize_library(library) {
+        Some(name) => format!("library-{name}.json"),
+        None => LIBRARY_FILE_NAME.to_string(),
+    };
+    Ok(data_dir(app)?.join(file))
+}
+
+/// Backup files carry their library's name, so accounts never restore
+/// each other's snapshots.
+fn backup_prefix(library: &Option<String>) -> String {
+    match sanitize_library(library) {
+        Some(name) => format!("library-{name}"),
+        None => "library".to_string(),
+    }
 }
 
 fn backups_dir(app: &AppHandle) -> Result<PathBuf, String> {
@@ -53,9 +83,9 @@ fn atomic_write(path: &Path, contents: &str) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn load_library(app: AppHandle) -> Result<Option<String>, String> {
+pub fn load_library(app: AppHandle, library: Option<String>) -> Result<Option<String>, String> {
     ensure_dirs(&app)?;
-    let path = library_path(&app)?;
+    let path = library_path(&app, &library)?;
     if !path.exists() {
         return Ok(None);
     }
@@ -63,9 +93,9 @@ pub fn load_library(app: AppHandle) -> Result<Option<String>, String> {
 }
 
 #[tauri::command]
-pub fn save_library(app: AppHandle, json: String) -> Result<(), String> {
+pub fn save_library(app: AppHandle, json: String, library: Option<String>) -> Result<(), String> {
     ensure_dirs(&app)?;
-    let path = library_path(&app)?;
+    let path = library_path(&app, &library)?;
     atomic_write(&path, &json)
 }
 
@@ -94,9 +124,9 @@ fn prune_backups(app: &AppHandle) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn create_backup(app: AppHandle) -> Result<Option<String>, String> {
+pub fn create_backup(app: AppHandle, library: Option<String>) -> Result<Option<String>, String> {
     ensure_dirs(&app)?;
-    let path = library_path(&app)?;
+    let path = library_path(&app, &library)?;
     if !path.exists() {
         return Ok(None);
     }
@@ -104,7 +134,7 @@ pub fn create_backup(app: AppHandle) -> Result<Option<String>, String> {
         .duration_since(std::time::UNIX_EPOCH)
         .map_err(|e| e.to_string())?
         .as_millis();
-    let filename = format!("library-{millis}.json");
+    let filename = format!("{}-{millis}.json", backup_prefix(&library));
     let dest = backups_dir(&app)?.join(&filename);
     fs::copy(&path, &dest).map_err(|e| e.to_string())?;
     prune_backups(&app)?;
@@ -112,17 +142,28 @@ pub fn create_backup(app: AppHandle) -> Result<Option<String>, String> {
 }
 
 #[tauri::command]
-pub fn list_backups(app: AppHandle) -> Result<Vec<BackupInfo>, String> {
+pub fn list_backups(app: AppHandle, library: Option<String>) -> Result<Vec<BackupInfo>, String> {
     ensure_dirs(&app)?;
     let dir = backups_dir(&app)?;
+    // The guest prefix "library-<millis>" would also match account files
+    // ("library-u-x-<millis>"), so guest listings must exclude anything
+    // whose remainder is not purely a timestamp.
+    let prefix = format!("{}-", backup_prefix(&library));
+    let is_account = sanitize_library(&library).is_some();
     let mut infos: Vec<BackupInfo> = fs::read_dir(&dir)
         .map_err(|e| e.to_string())?
         .filter_map(|e| e.ok())
         .filter_map(|e| {
             let meta = e.metadata().ok()?;
             let filename = e.file_name().to_string_lossy().to_string();
-            if !filename.ends_with(".json") {
+            if !filename.ends_with(".json") || !filename.starts_with(&prefix) {
                 return None;
+            }
+            if !is_account {
+                let rest = filename.trim_start_matches(&prefix).trim_end_matches(".json");
+                if !rest.chars().all(|c| c.is_ascii_digit()) {
+                    return None;
+                }
             }
             let created_at = meta
                 .modified()
@@ -142,7 +183,16 @@ pub fn list_backups(app: AppHandle) -> Result<Vec<BackupInfo>, String> {
 }
 
 #[tauri::command]
-pub fn restore_backup(app: AppHandle, filename: String) -> Result<String, String> {
+pub fn restore_backup(app: AppHandle, filename: String, library: Option<String>) -> Result<String, String> {
+    // A filename with a separator in it could climb out of the backups
+    // folder; a filename from another library's prefix would quietly mix
+    // two people's books. Both are refused, not repaired.
+    if filename.contains('/') || filename.contains('\\') {
+        return Err("That is not a backup file name".to_string());
+    }
+    if !filename.starts_with(&format!("{}-", backup_prefix(&library))) {
+        return Err("That backup belongs to a different library".to_string());
+    }
     let dir = backups_dir(&app)?;
     let src = dir.join(&filename);
     if !src.exists() {
