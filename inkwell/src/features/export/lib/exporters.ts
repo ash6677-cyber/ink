@@ -310,5 +310,14 @@ export async function buildExport(
         mimeType: 'application/epub+zip',
         bytes: await buildEpub(project, book),
       }
+    case 'pdf': {
+      // jsPDF rides in only when a PDF is actually asked for.
+      const { buildPdf } = await import('./build-pdf')
+      return {
+        filename,
+        mimeType: 'application/pdf',
+        bytes: await buildPdf(project, book),
+      }
+    }
   }
 }

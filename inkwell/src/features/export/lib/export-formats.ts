@@ -6,7 +6,7 @@
  * half (`exporters.ts`) is loaded dynamically the moment an export runs.
  */
 
-export type ExportFormat = 'markdown' | 'text' | 'html' | 'docx' | 'epub'
+export type ExportFormat = 'markdown' | 'text' | 'html' | 'docx' | 'epub' | 'pdf'
 
 export interface ExportResult {
   filename: string
@@ -45,5 +45,11 @@ export const FORMAT_META: Record<
     label: 'EPUB',
     extension: 'epub',
     description: 'A real ebook, readable in Apple Books, Kobo, Calibre, and most e-readers.',
+  },
+  pdf: {
+    label: 'PDF (print-ready)',
+    extension: 'pdf',
+    description:
+      '6×9 inch book pages — chapter openers, justified serif text, page numbers. Ready to print or send.',
   },
 }

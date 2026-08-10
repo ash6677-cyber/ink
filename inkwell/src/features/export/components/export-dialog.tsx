@@ -19,7 +19,7 @@ import { cn } from '@/lib/utils'
 import { usePreferencesStore } from '@/stores/preferences-store'
 import type { Project } from '@/types'
 
-const FORMATS: ExportFormat[] = ['docx', 'epub', 'markdown', 'html', 'text']
+const FORMATS: ExportFormat[] = ['docx', 'epub', 'pdf', 'markdown', 'html', 'text']
 
 export function ExportDialog({
   project,
