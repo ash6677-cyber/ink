@@ -11,6 +11,7 @@ import type {
   ManuscriptTemplate,
   Persona,
   Project,
+  RevisionPass,
   Scene,
   Series,
   SessionLog,
@@ -53,6 +54,7 @@ export interface LibraryDocument {
   sessionLogs: SessionLog[]
   manuscriptTemplates: ManuscriptTemplate[]
   themes: Theme[]
+  revisionPasses: RevisionPass[]
 }
 
 const ARRAY_KEYS = [
@@ -74,6 +76,7 @@ const ARRAY_KEYS = [
   'sessionLogs',
   'manuscriptTemplates',
   'themes',
+  'revisionPasses',
 ] as const
 
 export function emptyLibrary(): LibraryDocument {

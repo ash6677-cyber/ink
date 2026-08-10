@@ -319,9 +319,17 @@ export function SceneMetadataDrawer({
                   key={snap.id}
                   className="flex items-center justify-between gap-2 rounded-md border border-border px-2.5 py-1.5 text-xs"
                 >
-                  <div>
-                    <p className="font-medium">{formatRelativeTime(snap.createdAt)}</p>
-                    <p className="text-muted-foreground">{formatWordCount(snap.wordCount)} words</p>
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">
+                      {/* A named snapshot says its name — a frozen draft
+                          baseline or a sync conflict copy is not just
+                          "3 days ago". */}
+                      {snap.label ? snap.label : formatRelativeTime(snap.createdAt)}
+                    </p>
+                    <p className="text-muted-foreground">
+                      {snap.label ? `${formatRelativeTime(snap.createdAt)} · ` : ''}
+                      {formatWordCount(snap.wordCount)} words
+                    </p>
                   </div>
                   <div className="flex items-center gap-1">
                     <Button

@@ -19,6 +19,7 @@ export interface CascadeSource {
   covers: { id: string; projectId: string }[]
   goals: { id: string; projectId: string | null }[]
   sessionLogs: { id: string; projectId: string }[]
+  revisionPasses: { id: string; projectId: string }[]
   codexEntries: { id: string; projectId: string | null }[]
   characterCards: { id: string; projectId: string }[]
   cardChats: { id: string; projectId: string }[]
@@ -31,7 +32,7 @@ export type CascadePlan = Partial<Record<keyof CascadeSource, string[]>>
 export function emptyCascadeSource(): CascadeSource {
   return {
     chapters: [], scenes: [], snapshots: [], covers: [], goals: [],
-    sessionLogs: [], codexEntries: [], characterCards: [], cardChats: [], lorebooks: [],
+    sessionLogs: [], revisionPasses: [], codexEntries: [], characterCards: [], cardChats: [], lorebooks: [],
   }
 }
 
@@ -49,6 +50,7 @@ export function cascadeForProject(projectId: string, source: CascadeSource): Cas
     // nobody's project, so it survives.
     goals: ids(source.goals, (g) => g.projectId === projectId),
     sessionLogs: ids(source.sessionLogs, (s) => s.projectId === projectId),
+    revisionPasses: ids(source.revisionPasses, (s) => s.projectId === projectId),
     // Likewise a codex entry scoped to a series rather than a project: the
     // other books in the series still need it.
     codexEntries: ids(source.codexEntries, (e) => e.projectId === projectId),

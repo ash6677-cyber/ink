@@ -1,16 +1,18 @@
 import { create } from 'zustand'
 
-import { chapterRepo, sceneRepo, snapshotRepo } from '@/lib/db/repositories'
+import { chapterRepo, revisionPassRepo, sceneRepo, snapshotRepo } from '@/lib/db/repositories'
 import { mergeLabels } from '@/lib/labels'
 import { useStatsStore } from '@/stores/stats-store'
 import { binChapter, binScene } from '@/stores/trash-store'
-import type { Chapter, ChapterKind, Scene, SceneStatus, Snapshot } from '@/types'
+import { baselineLabel } from '@/features/editor/lib/revision'
+import type { Chapter, ChapterKind, RevisionPass, Scene, SceneStatus, Snapshot } from '@/types'
 
 type LoadStatus = 'idle' | 'loading' | 'ready' | 'error'
 
 interface EditorStoreState {
   projectId: string | null
   chapters: Chapter[]
+  revisionPasses: RevisionPass[]
   scenes: Scene[]
   activeSceneId: string | null
   status: LoadStatus
@@ -40,6 +42,10 @@ interface EditorStoreState {
   ) => Promise<void>
   updateChapterStatus: (id: string, status: SceneStatus) => Promise<void>
   setChapterTarget: (id: string, targetWords: number | null) => Promise<void>
+  /** Pins every scene as it stands under a named baseline ("Draft 1"). */
+  freezeDraft: (name: string) => Promise<RevisionPass>
+  /** The frozen scene texts of one pass, for judging the revision. */
+  loadBaselines: (pass: RevisionPass) => Promise<Snapshot[]>
 
   /** Renames a label on every scene carrying it; renaming onto an existing
    * label is the merge operation — the two become one, deduplicated. */
@@ -59,6 +65,7 @@ function nextOrder(items: { order: number }[]): number {
 export const useEditorStore = create<EditorStoreState>((set, get) => ({
   projectId: null,
   chapters: [],
+  revisionPasses: [],
   scenes: [],
   activeSceneId: null,
   status: 'idle',
@@ -67,7 +74,11 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
   loadProject: async (projectId) => {
     set({ status: 'loading', error: null, projectId })
     try {
-      const [allChapters, allScenes] = await Promise.all([chapterRepo.list(), sceneRepo.list()])
+      const [allChapters, allScenes, allPasses] = await Promise.all([
+        chapterRepo.list(),
+        sceneRepo.list(),
+        revisionPassRepo.list(),
+      ])
       const chapters = allChapters
         .filter((c) => c.projectId === projectId)
         .sort((a, b) => a.order - b.order)
@@ -82,6 +93,9 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
       set({
         chapters,
         scenes,
+        revisionPasses: allPasses
+          .filter((p) => p.projectId === projectId)
+          .sort((a, b) => a.createdAt - b.createdAt),
         status: 'ready',
         activeSceneId: get().activeSceneId ?? firstScene?.id ?? null,
       })
@@ -224,6 +238,44 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
   setChapterTarget: async (id, targetWords) => {
     await chapterRepo.update(id, { targetWords })
     set({ chapters: get().chapters.map((c) => (c.id === id ? { ...c, targetWords } : c)) })
+  },
+
+  freezeDraft: async (name) => {
+    const { projectId, scenes, revisionPasses } = get()
+    if (!projectId) throw new Error('No project open.')
+    const trimmed = name.trim() || 'Draft'
+    if (revisionPasses.some((p) => p.name === trimmed)) {
+      throw new Error('A draft with that name is already frozen.')
+    }
+    // The scenes first, the pass row last: a crash mid-freeze leaves some
+    // labelled snapshots and no pass — invisible clutter — rather than a
+    // pass whose baseline is missing scenes and quietly lies about them.
+    const label = baselineLabel(trimmed)
+    for (const scene of scenes) {
+      await snapshotRepo.create({
+        sceneId: scene.id,
+        content: scene.content,
+        plainText: scene.plainText,
+        wordCount: scene.wordCount,
+        label,
+      })
+    }
+    const pass = await revisionPassRepo.create({
+      projectId,
+      name: trimmed,
+      sceneCount: scenes.length,
+      wordCount: scenes.reduce((sum, s) => sum + s.wordCount, 0),
+    })
+    set({ revisionPasses: [...revisionPasses, pass] })
+    return pass
+  },
+
+  loadBaselines: async (pass) => {
+    // Every snapshot frozen under this pass's label — including ghosts of
+    // scenes that have since been cut, which the report counts as removed.
+    const label = baselineLabel(pass.name)
+    const all = await snapshotRepo.list()
+    return all.filter((snapshot) => snapshot.label === label)
   },
 
   renameLabel: async (from, to) => {

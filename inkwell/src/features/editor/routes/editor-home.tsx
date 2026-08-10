@@ -36,6 +36,7 @@ import { FindInScene } from '@/features/editor/components/find-in-scene'
 import { ManuscriptSearchPanel } from '@/features/editor/components/manuscript-search-panel'
 import { SceneEditor } from '@/features/editor/components/scene-editor'
 import { SceneMetadataDrawer } from '@/features/editor/components/scene-metadata-drawer'
+import { DraftsButton, DraftsPanel } from '@/features/editor/components/drafts-panel'
 import { SprintControl } from '@/features/editor/components/sprint-control'
 import { WordGoalControl } from '@/features/editor/components/word-goal-control'
 import { HandoffBanner } from '@/features/book-creator/components/handoff-banner'
@@ -123,6 +124,7 @@ export function EditorHome() {
   const [proofreadOpen, setProofreadOpen] = useState(false)
   const [continuityOpen, setContinuityOpen] = useState(false)
   const [mobileTreeOpen, setMobileTreeOpen] = useState(false)
+  const [draftsOpen, setDraftsOpen] = useState(false)
   const metadataVisible = isDesktop ? showMetadata : mobileMetadataOpen
   const [findOpen, setFindOpen] = useState(false)
   const [findQuery, setFindQuery] = useState('')
@@ -582,6 +584,7 @@ export function EditorHome() {
               </span>
               <WordGoalControl projectId={projectId ?? ''} />
               <SprintControl bookWordCount={bookWordCount} projectId={projectId} />
+              <DraftsButton onClick={() => setDraftsOpen(true)} />
               {activeScene && saveStatus === 'failed' && (
                 <span
                   role="alert"
@@ -817,6 +820,7 @@ export function EditorHome() {
         </Sheet>
       )}
 
+      <DraftsPanel open={draftsOpen} onOpenChange={setDraftsOpen} />
       <ManuscriptSearchPanel
         open={manuscriptSearchOpen}
         onOpenChange={setManuscriptSearchOpen}

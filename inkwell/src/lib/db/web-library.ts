@@ -50,6 +50,7 @@ export const BACKED_UP_TABLES = [
   'sessionLogs',
   'manuscriptTemplates',
   'themes',
+  'revisionPasses',
 ] as const
 
 /**

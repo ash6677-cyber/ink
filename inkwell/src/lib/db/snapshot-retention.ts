@@ -1,5 +1,6 @@
 import type { Snapshot } from '@/types'
 
+import { isBaselineSnapshot } from '@/features/editor/lib/revision'
 import { isConflictSnapshot } from '@/lib/sync/conflict'
 
 /**
@@ -65,6 +66,7 @@ export function snapshotsToSweep(
 
     for (const [index, snapshot] of ordered.entries()) {
       if (isConflictSnapshot(snapshot)) continue // nearly lost once already
+      if (isBaselineSnapshot(snapshot)) continue // a frozen draft is forever
       const bucket = bucketFor(snapshot.createdAt, now, policy)
       if (bucket === null) continue // inside the keep-everything window
 

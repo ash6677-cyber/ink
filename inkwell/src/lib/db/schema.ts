@@ -14,6 +14,7 @@ import type {
   ManuscriptTemplate,
   Persona,
   Project,
+  RevisionPass,
   Scene,
   Series,
   SessionLog,
@@ -49,6 +50,7 @@ export class InkwellDB extends Dexie {
   sessionLogs!: EntityTable<SessionLog, 'id'>
   manuscriptTemplates!: EntityTable<ManuscriptTemplate, 'id'>
   themes!: EntityTable<Theme, 'id'>
+  revisionPasses!: EntityTable<RevisionPass, 'id'>
 
   constructor(name = 'inkwell') {
     super(name)
@@ -83,6 +85,11 @@ export class InkwellDB extends Dexie {
     this.version(3).stores({
       themes: 'id, updatedAt',
     })
+
+    // Named draft freezes ("Draft 1"), judged against by revision mode.
+    this.version(4).stores({
+      revisionPasses: 'id, projectId, createdAt',
+    })
   }
 }
 
@@ -105,6 +112,7 @@ interface DbTables {
   sessionLogs: TrashableTable<SessionLog>
   manuscriptTemplates: TrashableTable<ManuscriptTemplate>
   themes: TrashableTable<Theme>
+  revisionPasses: TrashableTable<RevisionPass>
 }
 
 /** The raw tables, before soft-delete or sync wrapping. */

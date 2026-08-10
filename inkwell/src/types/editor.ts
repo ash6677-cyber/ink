@@ -72,6 +72,19 @@ export interface Scene extends BaseEntity {
   storyDay?: number | null
 }
 
+/**
+ * A named freeze of the whole manuscript — "Draft 1" — against which the
+ * current text is judged. The frozen scene contents live as ordinary
+ * snapshots labelled `Baseline — <name>`; this row is the pass itself.
+ */
+export interface RevisionPass extends BaseEntity {
+  projectId: string
+  name: string
+  /** What the book measured at the freeze, for the report's honesty. */
+  sceneCount: number
+  wordCount: number
+}
+
 export interface Snapshot extends BaseEntity {
   sceneId: string
   content: RichContent

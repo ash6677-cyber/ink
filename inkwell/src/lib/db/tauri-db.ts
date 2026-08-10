@@ -14,6 +14,7 @@ import type {
   Theme,
   Persona,
   Project,
+  RevisionPass,
   Scene,
   Series,
   SessionLog,
@@ -53,6 +54,7 @@ const goals = new Map<string, Goal>()
 const sessionLogs = new Map<string, SessionLog>()
 const manuscriptTemplates = new Map<string, ManuscriptTemplate>()
 const themes = new Map<string, Theme>()
+const revisionPasses = new Map<string, RevisionPass>()
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null
 let readyPromise: Promise<void> | null = null
@@ -99,6 +101,7 @@ async function serialize(): Promise<LibraryDocument> {
     sessionLogs: Array.from(sessionLogs.values()),
     manuscriptTemplates: Array.from(manuscriptTemplates.values()),
     themes: Array.from(themes.values()),
+    revisionPasses: Array.from(revisionPasses.values()),
   }
 }
 
@@ -125,6 +128,7 @@ async function hydrate(doc: LibraryDocument) {
   fillMap(sessionLogs, doc.sessionLogs)
   fillMap(manuscriptTemplates, doc.manuscriptTemplates)
   fillMap(themes, doc.themes)
+  fillMap(revisionPasses, doc.revisionPasses)
 
   imageAssets.clear()
   for (const stored of doc.imageAssets) {
@@ -219,4 +223,5 @@ export const tauriTables = {
   sessionLogs: new MemoryTable(sessionLogs, scheduleSave),
   manuscriptTemplates: new MemoryTable(manuscriptTemplates, scheduleSave),
   themes: new MemoryTable(themes, scheduleSave),
+  revisionPasses: new MemoryTable(revisionPasses, scheduleSave),
 }
