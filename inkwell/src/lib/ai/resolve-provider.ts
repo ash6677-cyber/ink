@@ -30,14 +30,30 @@ function usable(provider: AiProviderConfig): boolean {
 export function resolveProvider(
   preset: AiPreset | undefined,
   providers: AiProviderConfig[],
+  /** A per-feature key choice from Settings. When set and usable it wins
+   * outright — the writer said "this feature runs on this key," and that
+   * beats whatever the preset happens to name. */
+  preferredProviderId?: string | null,
 ): ResolvedProvider | null {
   const available = providers.filter(usable)
   if (available.length === 0) return null
 
+  const preferred = preferredProviderId
+    ? available.find((p) => p.id === preferredProviderId)
+    : undefined
   const named = preset?.providerId ? available.find((p) => p.id === preset.providerId) : undefined
-  const provider = named ?? available[0]
-  const model = preset?.model?.trim() || provider.defaultModel?.trim() || ''
-  return { provider, model, borrowed: !named }
+  const provider = preferred ?? named ?? available[0]
+  // A preset's model name belongs with the provider the preset was written
+  // for. When a per-feature choice moves the work to a different key, that
+  // key's own default model takes over — "gpt-4o" sent to an Anthropic key
+  // is not a model name, it's an error message waiting to happen.
+  const presetModelApplies = !preferred || !named || preferred.id === named.id
+  const model =
+    (presetModelApplies ? preset?.model?.trim() : '') ||
+    provider.defaultModel?.trim() ||
+    preset?.model?.trim() ||
+    ''
+  return { provider, model, borrowed: !preferred && !named }
 }
 
 /** Whether replies are possible at all right now. */

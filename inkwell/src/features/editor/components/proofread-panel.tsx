@@ -52,8 +52,9 @@ export function ProofreadPanel({
   const [suggestions, setSuggestions] = useState<ProofreadSuggestion[] | null>(null)
   const [resolvedIds, setResolvedIds] = useState<Set<string>>(new Set())
 
-  const preset = presetForFeature(presets, 'editorActions', featurePresets)
-  const provider = resolveProvider(preset, providers)?.provider
+  const preset = presetForFeature(presets, 'proofread', featurePresets)
+  const featureProviders = usePreferencesStore((s) => s.featureProviders)
+  const provider = resolveProvider(preset, providers, featureProviders.proofread)?.provider
 
   async function handleRun() {
     if (!preset || !provider) {

@@ -11,13 +11,28 @@
 
 import type { AiPreset } from '@/types'
 
-export type AiFeature = 'chat' | 'editorActions' | 'bookCreator'
+export type AiFeature = 'chat' | 'editorActions' | 'bookCreator' | 'proofread' | 'continuity'
+
+/** Every place a key can be pinned: the text features above, plus the one
+ * image feature, which has no preset of its own. */
+export type AiKeyedFeature = AiFeature | 'coverConcepts'
 
 export const AI_FEATURE_LABEL: Record<AiFeature, string> = {
   editorActions: 'Editor actions',
   chat: 'Character chat',
   bookCreator: 'Book Creator',
+  proofread: 'Proofread pass',
+  continuity: 'Continuity sentinel',
 }
+
+export const AI_KEYED_FEATURE_LABEL: Record<AiKeyedFeature, string> = {
+  ...AI_FEATURE_LABEL,
+  coverConcepts: 'AI cover concepts',
+}
+
+/** Which key each feature runs on; a feature not in the map follows its
+ * preset's provider, then the first working key. */
+export type FeatureProviderMap = Partial<Record<AiKeyedFeature, string>>
 
 export type FeaturePresetMap = Partial<Record<AiFeature, string>>
 

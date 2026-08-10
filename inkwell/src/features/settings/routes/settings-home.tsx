@@ -1,4 +1,5 @@
-import { AI_FEATURE_LABEL, presetForFeature, type AiFeature } from '@/lib/ai/feature-preset'
+import { AI_FEATURE_LABEL, AI_KEYED_FEATURE_LABEL, presetForFeature, type AiFeature, type AiKeyedFeature } from '@/lib/ai/feature-preset'
+import { isImageCapable } from '@/lib/ai/cover-concept'
 import { usePreferencesStore } from '@/stores/preferences-store'
 import {
   CheckCircle2,
@@ -126,6 +127,8 @@ export function SettingsHome() {
 
   const featurePresets = usePreferencesStore((s) => s.featurePresets)
   const setFeaturePreset = usePreferencesStore((s) => s.setFeaturePreset)
+  const featureProviders = usePreferencesStore((s) => s.featureProviders)
+  const setFeatureProvider = usePreferencesStore((s) => s.setFeatureProvider)
   const [presetFormOpen, setPresetFormOpen] = useState(false)
   const [editingPreset, setEditingPreset] = useState<AiPreset | undefined>(undefined)
   const [presetFormKey, setPresetFormKey] = useState(0)
@@ -382,7 +385,7 @@ export function SettingsHome() {
                       default follows whichever preset is starred.
                     </p>
                   </div>
-                  {(['editorActions', 'chat', 'bookCreator'] as AiFeature[]).map((feature) => (
+                  {(['editorActions', 'chat', 'bookCreator', 'proofread', 'continuity'] as AiFeature[]).map((feature) => (
                     <div key={feature} className="flex items-center justify-between gap-3">
                       <span className="text-sm">{AI_FEATURE_LABEL[feature]}</span>
                       <Select
@@ -408,6 +411,62 @@ export function SettingsHome() {
                       </Select>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {providers.length > 0 && (
+                <div id="setting-feature-keys" className="mt-6 space-y-3 border-t border-border pt-5">
+                  <div>
+                    <h3 className="text-sm font-semibold">Which key runs each feature</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Every request goes to the provider you pick here, billed on that key,
+                      answered by that provider's model. Automatic follows the feature's
+                      preset, then the first working key. Cover concepts only lists keys
+                      whose API family can generate images.
+                    </p>
+                  </div>
+                  {(
+                    [
+                      'editorActions',
+                      'chat',
+                      'bookCreator',
+                      'proofread',
+                      'continuity',
+                      'coverConcepts',
+                    ] as AiKeyedFeature[]
+                  ).map((feature) => {
+                    const options =
+                      feature === 'coverConcepts' ? providers.filter(isImageCapable) : providers
+                    return (
+                      <div key={feature} className="flex items-center justify-between gap-3">
+                        <span className="text-sm">{AI_KEYED_FEATURE_LABEL[feature]}</span>
+                        <Select
+                          value={featureProviders[feature] ?? 'auto'}
+                          onValueChange={(v) => setFeatureProvider(feature, v === 'auto' ? null : v)}
+                        >
+                          <SelectTrigger
+                            className="w-56"
+                            aria-label={`Key for ${AI_KEYED_FEATURE_LABEL[feature]}`}
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="auto">Automatic</SelectItem>
+                            {options.map((p) => (
+                              <SelectItem key={p.id} value={p.id}>
+                                {p.label}
+                              </SelectItem>
+                            ))}
+                            {options.length === 0 && (
+                              <SelectItem value="none" disabled>
+                                No image-capable keys yet
+                              </SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </section>

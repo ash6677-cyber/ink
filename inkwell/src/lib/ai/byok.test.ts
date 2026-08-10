@@ -133,6 +133,36 @@ describe('which key a preset actually uses', () => {
     expect(resolveProvider(preset(), [provider({ apiKey: '   ' })])).toBeNull()
   })
 
+  it('a per-feature key choice beats the preset, and brings its own model', () => {
+    const anthropic = provider({ id: 'p2', defaultModel: 'claude-sonnet-4-5' })
+    const resolved = resolveProvider(
+      preset({ providerId: 'p1', model: 'gpt-4o' }),
+      [provider(), anthropic],
+      'p2',
+    )
+    expect(resolved?.provider.id).toBe('p2')
+    // The preset's model belongs to the other API family; the chosen key's
+    // own default takes over.
+    expect(resolved?.model).toBe('claude-sonnet-4-5')
+    expect(resolved?.borrowed).toBe(false)
+  })
+
+  it('keeps the preset model when the per-feature choice IS the preset provider', () => {
+    const resolved = resolveProvider(
+      preset({ providerId: 'p1', model: 'gpt-4o-mini' }),
+      [provider()],
+      'p1',
+    )
+    expect(resolved?.provider.id).toBe('p1')
+    expect(resolved?.model).toBe('gpt-4o-mini')
+  })
+
+  it('falls back to the preset path when the chosen key was deleted or disabled', () => {
+    const resolved = resolveProvider(preset({ providerId: 'p1' }), [provider()], 'gone')
+    expect(resolved?.provider.id).toBe('p1')
+    expect(resolved?.borrowed).toBe(false)
+  })
+
   it('prefers the preset’s own model over the provider’s default', () => {
     expect(resolveProvider(preset({ model: 'gpt-4o-mini' }), [provider()])?.model).toBe('gpt-4o-mini')
   })

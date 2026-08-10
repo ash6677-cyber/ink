@@ -160,7 +160,8 @@ export function CardChat() {
   // Falls back to any working key rather than only the one this preset names.
   // Every preset the app ships with starts pointing at nothing, so the strict
   // version meant a writer could add a key and still get silence.
-  const resolved = resolveProvider(preset, providers)
+  const featureProviders = usePreferencesStore((s) => s.featureProviders)
+  const resolved = resolveProvider(preset, providers, featureProviders.chat)
   const provider = resolved?.provider
   const personaName = persona?.name ?? 'You'
 

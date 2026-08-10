@@ -28,6 +28,7 @@ import {
 } from '@/lib/ai/cover-concept'
 import { imageAssetRepo } from '@/lib/db/repositories'
 import { useAiStore } from '@/stores/ai-store'
+import { usePreferencesStore } from '@/stores/preferences-store'
 import type { Project } from '@/types'
 
 interface Concept {
@@ -61,6 +62,10 @@ export function CoverConceptsDialog({
 
   const imageProviders = providers.filter((p) => p.enabled !== false && isImageCapable(p))
 
+  // The choice is remembered: pick a key for covers once (here or in
+  // Settings → AI) and every later visit starts on it.
+  const featureProviders = usePreferencesStore((s) => s.featureProviders)
+  const setFeatureProvider = usePreferencesStore((s) => s.setFeatureProvider)
   const [providerId, setProviderId] = useState('')
   const [model, setModel] = useState('')
   const [mood, setMood] = useState('')
@@ -69,7 +74,10 @@ export function CoverConceptsDialog({
   const [usingIndex, setUsingIndex] = useState<number | null>(null)
 
   const provider =
-    imageProviders.find((p) => p.id === providerId) ?? imageProviders[0] ?? null
+    imageProviders.find((p) => p.id === providerId) ??
+    imageProviders.find((p) => p.id === featureProviders.coverConcepts) ??
+    imageProviders[0] ??
+    null
 
   async function generate() {
     if (!provider) return
@@ -164,7 +172,13 @@ export function CoverConceptsDialog({
             {imageProviders.length > 1 && (
               <div className="grid gap-1.5">
                 <Label>Provider</Label>
-                <Select value={provider?.id ?? ''} onValueChange={setProviderId}>
+                <Select
+                  value={provider?.id ?? ''}
+                  onValueChange={(value) => {
+                    setProviderId(value)
+                    setFeatureProvider('coverConcepts', value)
+                  }}
+                >
                   <SelectTrigger aria-label="Image provider">
                     <SelectValue />
                   </SelectTrigger>

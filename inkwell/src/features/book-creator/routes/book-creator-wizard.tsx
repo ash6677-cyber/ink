@@ -101,7 +101,8 @@ export function BookCreatorWizard() {
   const featurePresets = usePreferencesStore((s) => s.featurePresets)
   const preset = presetForFeature(presets, 'bookCreator', featurePresets)
   // Any working key, not only the one this preset names. See resolve-provider.
-  const provider = resolveProvider(preset, providers)?.provider
+  const featureProviders = usePreferencesStore((s) => s.featureProviders)
+  const provider = resolveProvider(preset, providers, featureProviders.bookCreator)?.provider
   const aiAvailable = Boolean(preset && provider)
 
   // Read once, before the first render, so a restored draft is simply what

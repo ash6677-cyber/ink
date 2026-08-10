@@ -50,8 +50,9 @@ export function ContinuityPanel({
 
   const [findings, setFindings] = useState<ContinuityFinding[] | null>(null)
 
-  const preset = presetForFeature(presets, 'editorActions', featurePresets)
-  const provider = resolveProvider(preset, providers)?.provider
+  const preset = presetForFeature(presets, 'continuity', featurePresets)
+  const featureProviders = usePreferencesStore((s) => s.featureProviders)
+  const provider = resolveProvider(preset, providers, featureProviders.continuity)?.provider
   const hasFacts = factSheet(codexEntries).length > 0
 
   async function handleRun() {

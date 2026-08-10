@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 import { DEFAULT_EDITOR_FONT_ID } from '@/lib/editor/fonts'
-import type { AiFeature, FeaturePresetMap } from '@/lib/ai/feature-preset'
+import type { AiFeature, AiKeyedFeature, FeaturePresetMap, FeatureProviderMap } from '@/lib/ai/feature-preset'
 import {
   applyShortcutOverrides,
   type ShortcutId,
@@ -36,6 +36,9 @@ interface PreferencesState {
   /** Per-feature AI preset choices; a feature not in the map follows the
    * global default preset. */
   featurePresets: FeaturePresetMap
+  /** Which key each AI feature runs on; a feature not in the map follows
+   * its preset's provider, then the first working key. */
+  featureProviders: FeatureProviderMap
   /**
    * The book viewer's own light/dark choice, independent of the app theme —
    * a writer working in a dark app can still read on paper-white pages.
@@ -51,6 +54,7 @@ interface PreferencesState {
   setShortcutOverride: (id: ShortcutId, combo: string) => void
   setAutosaveDelayMs: (ms: number) => void
   setFeaturePreset: (feature: AiFeature, presetId: string | null) => void
+  setFeatureProvider: (feature: AiKeyedFeature, providerId: string | null) => void
   clearShortcutOverride: (id: ShortcutId) => void
   setTypewriterMode: (value: boolean) => void
   setDimInactiveParagraphs: (value: boolean) => void
@@ -77,6 +81,7 @@ export const usePreferencesStore = create<PreferencesState>()(
       shortcutOverrides: {},
       autosaveDelayMs: 800,
       featurePresets: {},
+      featureProviders: {},
       readerTheme: null,
       styleTics: [],
       setEditorFont: (id) => set({ editorFont: id }),
@@ -89,6 +94,13 @@ export const usePreferencesStore = create<PreferencesState>()(
           if (presetId) next[feature] = presetId
           else delete next[feature]
           return { featurePresets: next }
+        }),
+      setFeatureProvider: (feature, providerId) =>
+        set((s) => {
+          const next = { ...s.featureProviders }
+          if (providerId) next[feature] = providerId
+          else delete next[feature]
+          return { featureProviders: next }
         }),
       setShortcutOverride: (id, combo) =>
         set((s) => {

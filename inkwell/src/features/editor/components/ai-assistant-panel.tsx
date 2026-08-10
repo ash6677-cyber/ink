@@ -85,7 +85,8 @@ export function AiAssistantPanel({ scene, editor, codexEntries, pov, tense, onCl
   // Any working key, not only the one this preset names — the shipped
   // presets start pointing at nothing, so the strict lookup left a writer
   // with a valid key and no explanation for the silence.
-  const resolved = resolveProvider(preset, providers)
+  const featureProviders = usePreferencesStore((s) => s.featureProviders)
+  const resolved = resolveProvider(preset, providers, featureProviders.editorActions)
   const provider = resolved?.provider
 
   const liveSelectionText = editor ? getSelectionText(editor) : ''
