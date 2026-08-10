@@ -10,6 +10,7 @@
  * through Firestore's typed value trees.
  */
 
+import { parseShareCover } from '@/features/reader/lib/share-cover'
 import type { BookChapter } from '@/features/reader/lib/compile-book'
 import { hasRealConfig, useEmulator } from '@/lib/firebase/cloud-flags'
 import type { Scene } from '@/types'
@@ -34,6 +35,8 @@ export interface SharedBookMeta {
   author: string
   chapterCount: number
   updatedAt: number
+  /** The cover as a vetted image data URL, or null when the share has none. */
+  cover: string | null
 }
 
 /**
@@ -142,6 +145,7 @@ export async function fetchShare(shareId: string): Promise<FetchedShare> {
       author: str(metaDoc, 'author'),
       chapterCount: num(metaDoc, 'chapterCount'),
       updatedAt: num(metaDoc, 'updatedAt'),
+      cover: parseShareCover(metaDoc.fields?.cover?.stringValue),
     }
 
     const chaptersRes = await fetch(`${restBase()}/shares/${shareId}/chapters?pageSize=300`)

@@ -9,6 +9,9 @@ interface FrontPageProps {
   title: string
   author: string
   metrics: PageMetrics
+  /** A cover that arrived with a shared book, already vetted. When set it
+   * wins outright — a shared reader has no local library to look in. */
+  coverDataUrl?: string | null
 }
 
 /** Drawn at print width so the art is sharp on the page and on a retina screen. */
@@ -26,12 +29,14 @@ const COVER_WIDTH = 1200
  * title page is what a book has when it has no jacket, and opening on the
  * title and the author's name is the right first thing either way.
  */
-export function FrontPage({ projectId, title, author, metrics }: FrontPageProps) {
+export function FrontPage({ projectId, title, author, metrics, coverDataUrl }: FrontPageProps) {
   const coverBlob = useLiveQuery(
-    () => resolveCoverThumbnail(projectId, COVER_WIDTH),
+    // A shared book has no library to look in; don't even ask.
+    () => (projectId ? resolveCoverThumbnail(projectId, COVER_WIDTH) : Promise.resolve(null)),
     [projectId],
   )
-  const coverUrl = useObjectUrl(coverBlob)
+  const localUrl = useObjectUrl(coverBlob)
+  const coverUrl = coverDataUrl ?? localUrl
 
   return (
     <div

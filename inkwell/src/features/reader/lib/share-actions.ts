@@ -5,10 +5,39 @@
  * its owner touch it.
  */
 
+import { resolveCoverThumbnail } from '@/features/covers/lib/resolve-cover'
 import type { BookChapter } from '@/features/reader/lib/compile-book'
 import { chapterPayload, newShareId } from '@/features/reader/lib/share-book'
+import { COVER_MAX_EDGE, coverAcceptable } from '@/features/reader/lib/share-cover'
 import { projectRepo } from '@/lib/db/repositories'
 import type { Project } from '@/types'
+
+/**
+ * The cover as a JPEG data URL small enough to ride inside the share
+ * document, or null when there is no cover or it will not fit — a share
+ * without a jacket beats a share that refuses to save.
+ */
+async function encodeShareCover(projectId: string): Promise<string | null> {
+  try {
+    const blob = await resolveCoverThumbnail(projectId, COVER_MAX_EDGE)
+    if (!blob) return null
+    const bitmap = await createImageBitmap(blob)
+    const canvas = document.createElement('canvas')
+    canvas.width = bitmap.width
+    canvas.height = bitmap.height
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return null
+    ctx.drawImage(bitmap, 0, 0)
+    bitmap.close()
+    for (const quality of [0.82, 0.6]) {
+      const dataUrl = canvas.toDataURL('image/jpeg', quality)
+      if (coverAcceptable(dataUrl)) return dataUrl
+    }
+    return null
+  } catch {
+    return null
+  }
+}
 
 async function deps() {
   const [fs, cfg] = await Promise.all([import('firebase/firestore'), import('@/lib/firebase/config')])
@@ -28,12 +57,17 @@ export async function publishShare(project: Project, book: BookChapter[]): Promi
 
   const previousCount = project.shareChapterCount ?? 0
 
+  const cover = await encodeShareCover(project.id)
   await fs.setDoc(fs.doc(db, 'shares', shareId), {
     ownerUid: uid,
     title: project.title,
     author: project.author,
     chapterCount: book.length,
     updatedAt: Date.now(),
+    // Present only when the book has a cover that fits the document;
+    // omitting the field entirely keeps old shares and no-cover shares
+    // byte-identical to what they were.
+    ...(cover ? { cover } : {}),
   })
   for (let i = 0; i < book.length; i++) {
     await fs.setDoc(fs.doc(db, 'shares', shareId, 'chapters', String(i)), {

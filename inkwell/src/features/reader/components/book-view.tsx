@@ -67,6 +67,7 @@ export const BookView = forwardRef<
     onPageIndexChange: (index: number) => void
     flatPages: ReaderPage[]
     projectId: string
+    coverDataUrl?: string | null
     title: string
     author: string
   }
@@ -80,6 +81,7 @@ export const BookView = forwardRef<
     onPageIndexChange,
     flatPages,
     projectId,
+    coverDataUrl,
     title,
     author,
   },
@@ -406,7 +408,13 @@ export const BookView = forwardRef<
       if (!page) return <div className="book-page book-page-blank" style={{ width: metrics.width, height: metrics.height }} />
       if (page.kind === 'front') {
         return (
-          <FrontPage projectId={projectId} title={title} author={author} metrics={metrics} />
+          <FrontPage
+            projectId={projectId}
+            coverDataUrl={coverDataUrl}
+            title={title}
+            author={author}
+            metrics={metrics}
+          />
         )
       }
       return (
@@ -415,7 +423,7 @@ export const BookView = forwardRef<
         </PageSurface>
       )
     },
-    [book, flatPages, metrics, projectId, title, author],
+    [book, flatPages, metrics, projectId, coverDataUrl, title, author],
   )
 
   // The front page carries no folio, and the first page of prose is page one

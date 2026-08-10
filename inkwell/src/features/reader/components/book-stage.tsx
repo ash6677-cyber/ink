@@ -56,6 +56,7 @@ export function BookStage({
   title,
   author,
   projectId,
+  coverDataUrl,
   onChapterChange,
   initialPage,
   onPageChange,
@@ -64,8 +65,10 @@ export function BookStage({
   title: string
   author: string
   /** Used only to look up a local cover for the front page; a shared book
-   * passes '' and gets the plain title page. */
+   * passes '' and sends the cover that travelled with the share instead. */
   projectId: string
+  /** A vetted cover data URL from a shared book, when there is one. */
+  coverDataUrl?: string | null
   /** Fires as reading moves between chapters — the shared reader anchors
    * a beta reader's notes to wherever they currently are. */
   onChapterChange?: (chapterIndex: number) => void
@@ -183,6 +186,7 @@ export function BookStage({
             onPageIndexChange={setPageIndex}
             flatPages={flatPages}
             projectId={projectId}
+            coverDataUrl={coverDataUrl}
             title={title}
             author={author}
           />

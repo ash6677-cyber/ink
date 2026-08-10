@@ -122,6 +122,7 @@ export function SharedReader() {
       </header>
 
       <BookStage
+        coverDataUrl={share.meta.cover}
         book={book}
         title={share.meta.title}
         author={share.meta.author}
