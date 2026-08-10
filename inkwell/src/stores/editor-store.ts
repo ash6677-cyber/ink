@@ -39,6 +39,7 @@ interface EditorStoreState {
     changes: Partial<Pick<Scene, 'status' | 'summary' | 'labels' | 'beats' | 'storyDay'>>,
   ) => Promise<void>
   updateChapterStatus: (id: string, status: SceneStatus) => Promise<void>
+  setChapterTarget: (id: string, targetWords: number | null) => Promise<void>
 
   /** Renames a label on every scene carrying it; renaming onto an existing
    * label is the merge operation — the two become one, deduplicated. */
@@ -218,6 +219,11 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
   updateChapterStatus: async (id, status) => {
     await chapterRepo.update(id, { status })
     set({ chapters: get().chapters.map((c) => (c.id === id ? { ...c, status } : c)) })
+  },
+
+  setChapterTarget: async (id, targetWords) => {
+    await chapterRepo.update(id, { targetWords })
+    set({ chapters: get().chapters.map((c) => (c.id === id ? { ...c, targetWords } : c)) })
   },
 
   renameLabel: async (from, to) => {

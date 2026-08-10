@@ -11,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { ChapterTargetRing } from '@/features/editor/components/chapter-target-ring'
 import {
   CHAPTER_KIND_LABEL,
   chapterKind,
@@ -73,6 +74,7 @@ interface ChapterRowProps {
   onToggleExpand: () => void
   onRename: (title: string) => void
   onSetKind: (kind: ChapterKind) => void
+  onSetTarget: () => void
   onDelete: () => void
   onAddScene: () => void
   isDropTarget: boolean
@@ -86,6 +88,7 @@ export function ChapterRow({
   onToggleExpand,
   onRename,
   onSetKind,
+  onSetTarget,
   onDelete,
   onAddScene,
   isDropTarget,
@@ -160,6 +163,8 @@ export function ChapterRow({
           </button>
         )}
 
+        <ChapterTargetRing wordCount={wordCount} target={chapter.targetWords} />
+
         <span className="hidden shrink-0 text-xs tabular-nums text-muted-foreground group-hover:inline">
           {wordCount.toLocaleString()}w
         </span>
@@ -200,6 +205,10 @@ export function ChapterRow({
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onSetTarget}>
+              {chapter.targetWords ? 'Word target…' : 'Set word target…'}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={onDelete}
               className="text-destructive focus:text-destructive"
@@ -227,6 +236,7 @@ interface ChapterOnlyRowProps {
   onSelect: () => void
   onRename: (title: string) => void
   onSetKind: (kind: ChapterKind) => void
+  onSetTarget: () => void
   onDelete: () => void
 }
 
@@ -238,6 +248,7 @@ export function ChapterOnlyRow({
   onSelect,
   onRename,
   onSetKind,
+  onSetTarget,
   onDelete,
 }: ChapterOnlyRowProps) {
   const [renaming, setRenaming] = useState(false)
@@ -299,6 +310,8 @@ export function ChapterOnlyRow({
           </button>
         )}
 
+        <ChapterTargetRing wordCount={wordCount} target={chapter.targetWords} />
+
         <span className="hidden shrink-0 text-xs tabular-nums text-muted-foreground group-hover:inline">
           {wordCount.toLocaleString()}w
         </span>
@@ -329,6 +342,10 @@ export function ChapterOnlyRow({
                 {CHAPTER_KIND_LABEL[option]}
               </DropdownMenuItem>
             ))}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onSetTarget}>
+              {chapter.targetWords ? 'Word target…' : 'Set word target…'}
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={onDelete}

@@ -31,13 +31,23 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import {
   ChapterOnlyRow,
   ChapterRow,
   SceneRow,
   StatusDot,
 } from '@/features/editor/components/tree-items'
+import { parseTargetInput } from '@/features/editor/lib/chapter-target'
 import { useEditorStore } from '@/stores/editor-store'
-import type { Scene, StructureMode } from '@/types'
+import type { Chapter, Scene, StructureMode } from '@/types'
 
 type DragItemData = { type: 'chapter'; chapterId: string } | { type: 'scene'; chapterId: string }
 
@@ -65,6 +75,7 @@ export function ChapterSceneTree({ structureMode = 'scenes' }: ChapterSceneTreeP
   const renameScene = useEditorStore((s) => s.renameScene)
   const deleteScene = useEditorStore((s) => s.deleteScene)
   const applySceneOrder = useEditorStore((s) => s.applySceneOrder)
+  const setChapterTarget = useEditorStore((s) => s.setChapterTarget)
 
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
   const [activeDrag, setActiveDrag] = useState<{ type: 'chapter' | 'scene'; id: string } | null>(
@@ -73,6 +84,8 @@ export function ChapterSceneTree({ structureMode = 'scenes' }: ChapterSceneTreeP
   const [overChapterId, setOverChapterId] = useState<string | null>(null)
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [targetChapter, setTargetChapter] = useState<Chapter | null>(null)
+  const [targetDraft, setTargetDraft] = useState('')
 
   const chaptersSorted = useMemo(() => [...chapters].sort((a, b) => a.order - b.order), [chapters])
   const scenesByChapter = useMemo(() => {
@@ -248,6 +261,10 @@ export function ChapterSceneTree({ structureMode = 'scenes' }: ChapterSceneTreeP
                       }}
                       onRename={(title) => renameChapter(chapter.id, title)}
                       onSetKind={(kind) => setChapterKind(chapter.id, kind)}
+                      onSetTarget={() => {
+                        setTargetDraft(chapter.targetWords ? String(chapter.targetWords) : '')
+                        setTargetChapter(chapter)
+                      }}
                       onDelete={() =>
                         setPendingDelete({ kind: 'chapter', id: chapter.id, title: chapter.title })
                       }
@@ -264,6 +281,10 @@ export function ChapterSceneTree({ structureMode = 'scenes' }: ChapterSceneTreeP
                     onToggleExpand={() => toggleExpand(chapter.id)}
                     onRename={(title) => renameChapter(chapter.id, title)}
                     onSetKind={(kind) => setChapterKind(chapter.id, kind)}
+                    onSetTarget={() => {
+                      setTargetDraft(chapter.targetWords ? String(chapter.targetWords) : '')
+                      setTargetChapter(chapter)
+                    }}
                     onDelete={() =>
                       setPendingDelete({ kind: 'chapter', id: chapter.id, title: chapter.title })
                     }
@@ -312,6 +333,50 @@ export function ChapterSceneTree({ structureMode = 'scenes' }: ChapterSceneTreeP
           ) : null}
         </DragOverlay>
       </DndContext>
+
+      <Dialog
+        open={targetChapter !== null}
+        onOpenChange={(open) => !open && setTargetChapter(null)}
+      >
+        <DialogContent className="max-w-xs">
+          <DialogHeader>
+            <DialogTitle>Word target for "{targetChapter?.title}"</DialogTitle>
+            <DialogDescription>
+              A little ring in the chapter list fills as you write toward it. Leave blank to
+              remove the target.
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            autoFocus
+            type="number"
+            min={0}
+            step={100}
+            inputMode="numeric"
+            value={targetDraft}
+            onChange={(e) => setTargetDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && targetChapter) {
+                void setChapterTarget(targetChapter.id, parseTargetInput(targetDraft))
+                setTargetChapter(null)
+              }
+            }}
+            placeholder="e.g. 3000"
+            aria-label="Chapter word target"
+          />
+          <DialogFooter>
+            <Button
+              onClick={() => {
+                if (targetChapter) {
+                  void setChapterTarget(targetChapter.id, parseTargetInput(targetDraft))
+                  setTargetChapter(null)
+                }
+              }}
+            >
+              Save target
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog
         open={pendingDelete !== null}

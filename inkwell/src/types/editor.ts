@@ -36,6 +36,9 @@ export interface Chapter extends BaseEntity {
    * `chapterKind()` rather than directly.
    */
   kind?: ChapterKind
+  /** A per-chapter word target, when the writer sets one. Absent or null
+   * means no target — the book-level goal alone. Optional-by-absence. */
+  targetWords?: number | null
 }
 
 export interface SceneBeat {
