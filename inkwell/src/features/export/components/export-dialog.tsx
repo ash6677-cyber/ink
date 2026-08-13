@@ -14,6 +14,7 @@ import { useToast } from '@/components/ui/use-toast'
 import { FORMAT_META, type ExportFormat } from '@/features/export/lib/export-formats'
 import { saveExport } from '@/features/export/lib/save-file'
 import { compileBook, type BookChapter } from '@/features/reader/lib/compile-book'
+import { isMatterChapter, withMatter } from '@/features/reader/lib/matter'
 import { chapterRepo, sceneRepo } from '@/lib/db/repositories'
 import { cn } from '@/lib/utils'
 import { usePreferencesStore } from '@/stores/preferences-store'
@@ -57,9 +58,14 @@ export function ExportDialog({
       if (cancelled) return
       setLoaded({
         projectId: project.id,
-        book: compileBook(
-          chapters.filter((c) => c.projectId === project.id),
-          scenes.filter((s) => s.projectId === project.id),
+        // Matter rides along as synthetic chapters, so every format gets
+        // its dedication page without knowing matter exists.
+        book: withMatter(
+          compileBook(
+            chapters.filter((c) => c.projectId === project.id),
+            scenes.filter((s) => s.projectId === project.id),
+          ),
+          project.matter,
         ),
       })
     })
@@ -69,9 +75,13 @@ export function ExportDialog({
   }, [open, project])
 
   const wordCount = book?.reduce((sum, chapter) => sum + chapter.wordCount, 0) ?? 0
+  // A dedication is in the file but is not a chapter the writer wrote,
+  // so the count here names story chapters only.
   const chapterCount =
-    book?.filter((chapter) =>
-      chapter.scenes.some((scene) => scene.plainText.trim().length > 0 || scene.content),
+    book?.filter(
+      (chapter) =>
+        !isMatterChapter(chapter.id) &&
+        chapter.scenes.some((scene) => scene.plainText.trim().length > 0 || scene.content),
     ).length ?? 0
 
   async function handleExport() {

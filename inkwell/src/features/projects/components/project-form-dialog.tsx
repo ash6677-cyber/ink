@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { STRUCTURE_OPTIONS } from '@/features/projects/lib/structure-options'
+import { emptyMatter, hasAnyMatter } from '@/features/reader/lib/matter'
 import { BookThemePicker } from '@/features/theme/components/book-theme-picker'
 import { TemplatePicker } from '@/features/templates/components/template-picker'
 import { DEFAULT_TEMPLATE_ID } from '@/features/templates/lib/templates'
@@ -61,6 +62,7 @@ function formFromProject(project: Project): ProjectFormInput {
     tense: project.settings.tense,
     structureMode: project.settings.structureMode ?? 'scenes',
     themeId: project.themeId ?? null,
+    matter: { ...emptyMatter(), ...(project.matter ?? {}) },
   }
 }
 
@@ -80,6 +82,12 @@ export function ProjectFormDialog({
   )
   const [titleError, setTitleError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  // Open from the start when the book already has matter, so editing it
+  // never means hunting for a hidden section.
+  const [matterOpen, setMatterOpen] = useState(() => hasAnyMatter(project?.matter))
+  const matter = form.matter ?? emptyMatter()
+  const setMatter = (changes: Partial<typeof matter>) =>
+    setForm({ ...form, matter: { ...matter, ...changes } })
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -297,6 +305,80 @@ export function ProjectFormDialog({
               value={form.themeId}
               onChange={(themeId) => setForm({ ...form, themeId })}
             />
+
+            {/* The book as an object: what stands before and after the story.
+                Only for existing projects — a book needs to exist before it
+                can be dedicated. */}
+            {project && (
+              <div className="grid gap-1.5">
+                <button
+                  type="button"
+                  className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-left text-sm font-medium hover:bg-accent"
+                  onClick={() => setMatterOpen((v) => !v)}
+                  aria-expanded={matterOpen}
+                >
+                  Front &amp; back matter
+                  <span className="text-xs font-normal text-muted-foreground">
+                    {hasAnyMatter(matter) ? 'written' : 'none yet'} · {matterOpen ? 'hide' : 'edit'}
+                  </span>
+                </button>
+                {matterOpen && (
+                  <div className="grid gap-4 rounded-md border border-border p-3">
+                    <p className="text-xs text-muted-foreground">
+                      These become real pages in every export, the reader, and shared copies —
+                      a dedication page, not text faked into chapter one. Leave a section empty
+                      and it simply doesn't exist.
+                    </p>
+                    <div className="grid gap-1.5">
+                      <Label htmlFor={`${titleId}-dedication`}>Dedication</Label>
+                      <Textarea
+                        id={`${titleId}-dedication`}
+                        value={matter.dedication}
+                        onChange={(e) => setMatter({ dedication: e.target.value })}
+                        placeholder="For Ada."
+                        rows={2}
+                      />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label htmlFor={`${titleId}-epigraph`}>Epigraph</Label>
+                      <Textarea
+                        id={`${titleId}-epigraph`}
+                        value={matter.epigraph}
+                        onChange={(e) => setMatter({ epigraph: e.target.value })}
+                        placeholder="A short quotation to open the book"
+                        rows={2}
+                      />
+                      <Input
+                        aria-label="Epigraph attribution"
+                        value={matter.epigraphAttribution}
+                        onChange={(e) => setMatter({ epigraphAttribution: e.target.value })}
+                        placeholder="Who said it (shown as “— Name”)"
+                      />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label htmlFor={`${titleId}-acknowledgments`}>Acknowledgments</Label>
+                      <Textarea
+                        id={`${titleId}-acknowledgments`}
+                        value={matter.acknowledgments}
+                        onChange={(e) => setMatter({ acknowledgments: e.target.value })}
+                        placeholder="The people who kept this book alive"
+                        rows={3}
+                      />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label htmlFor={`${titleId}-about`}>About the author</Label>
+                      <Textarea
+                        id={`${titleId}-about`}
+                        value={matter.aboutAuthor}
+                        onChange={(e) => setMatter({ aboutAuthor: e.target.value })}
+                        placeholder="A few sentences, third person, for the back of the book"
+                        rows={3}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <DialogFooter className="mt-6 shrink-0">

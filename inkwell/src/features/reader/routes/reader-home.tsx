@@ -10,6 +10,7 @@ import { ShareBookDialog } from '@/features/reader/components/share-book-dialog'
 import { useReaderThemeClass } from '@/features/reader/lib/use-reader-theme'
 import { cn } from '@/lib/utils'
 import { compileBook } from '@/features/reader/lib/compile-book'
+import { withMatter } from '@/features/reader/lib/matter'
 import { cloudEnabled } from '@/lib/firebase/cloud-flags'
 import { projectRepo } from '@/lib/db/repositories'
 import { useAuthStore } from '@/stores/auth-store'
@@ -44,7 +45,12 @@ export function ReaderHome() {
     if (projectId) loadProject(projectId)
   }, [projectId, loadProject])
 
-  const book = useMemo(() => compileBook(chapters, scenes), [chapters, scenes])
+  // Matter wraps the compiled story here, so the page-flip reader and the
+  // share dialog (which publishes this same book) both carry it for free.
+  const book = useMemo(
+    () => withMatter(compileBook(chapters, scenes), project?.matter),
+    [chapters, scenes, project],
+  )
 
   const user = useAuthStore((s) => s.user)
   const [shareOpen, setShareOpen] = useState(false)

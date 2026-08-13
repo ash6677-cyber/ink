@@ -5,7 +5,7 @@ import { db } from '@/lib/db/schema'
 import { binProject } from '@/stores/trash-store'
 import { findTemplate, templateChoices, useTemplateStore } from '@/stores/template-store'
 import { projectRepo } from '@/lib/db/repositories'
-import type { Project } from '@/types'
+import type { BookMatter, Project } from '@/types'
 
 export interface ProjectFormInput {
   title: string
@@ -25,6 +25,9 @@ export interface ProjectFormInput {
    * add a second prologue rather than change anything.
    */
   templateId?: string | null
+  /** Front & back matter — dedication, epigraph, acknowledgments, about
+   * the author. Absent sections stay empty strings. */
+  matter?: BookMatter
 }
 
 type LoadStatus = 'idle' | 'loading' | 'ready' | 'error'
@@ -101,6 +104,9 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       targetWordCount: input.targetWordCount,
       themeId: input.themeId,
       status: input.status,
+      // Only written when the form actually carried it — an update built
+      // without matter must not wipe what the writer already wrote.
+      ...(input.matter !== undefined ? { matter: input.matter } : {}),
       settings: {
         ...get().projects.find((p) => p.id === id)!.settings,
         pov: input.pov,

@@ -15,6 +15,21 @@ export interface ProjectSettings {
   structureMode: StructureMode
 }
 
+/**
+ * The parts of a book that aren't chapters: what stands before the story
+ * and after it. Stored as plain text on the project — they are single
+ * short passages, not manuscripts — and compiled into every export, the
+ * reader, and shared copies as real sections rather than text faked into
+ * chapter one. Empty strings mean the section simply doesn't exist.
+ */
+export interface BookMatter {
+  dedication: string
+  epigraph: string
+  epigraphAttribution: string
+  acknowledgments: string
+  aboutAuthor: string
+}
+
 export interface Project extends BaseEntity {
   title: string
   author: string
@@ -60,6 +75,9 @@ export interface Project extends BaseEntity {
   themeId?: string | null
   status: ProjectStatus
   settings: ProjectSettings
+  /** Front & back matter, when the writer has written any.
+   * Optional-by-absence: projects made before it existed stay valid. */
+  matter?: BookMatter | null
 }
 
 /** Surface finish of the slipcase board, which decides how it takes light. */
