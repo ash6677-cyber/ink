@@ -46,12 +46,19 @@ export interface PdfPage {
   lines: PdfLine[]
   /** Printed page number, when this page carries a folio. */
   folio?: number
+  /** A picture placed on this page — a portrait under a chapter title.
+   * The layout reserves the space; the renderer draws whatever `key` maps
+   * to. One per page is all the world bible needs. */
+  art?: { key: string; x: number; y: number; width: number; height: number }
 }
 
 export interface PdfChapterInput {
   title: string
   /** Paragraphs in order; a scene break is the literal '* * *'. */
   paragraphs: string[]
+  /** A picture to set under the title, centered, in points. The chapter's
+   * first page carries it and the text starts below. */
+  art?: { key: string; width: number; height: number }
 }
 
 export type MeasureFn = (text: string, size: number) => number
@@ -164,6 +171,14 @@ export function layoutBook(
       align: 'center',
     })
     y += m.leading * 2.5
+
+    if (chapter.art) {
+      // Centered under the title; text resumes a comfortable step below.
+      const width = Math.min(chapter.art.width, textWidth)
+      const height = chapter.art.height * (width / chapter.art.width)
+      page.art = { key: chapter.art.key, x: center - width / 2, y, width, height }
+      y += height + m.leading * 1.5
+    }
 
     let afterBreak = true // the first paragraph after a heading sits flush
     for (const paragraph of chapter.paragraphs) {

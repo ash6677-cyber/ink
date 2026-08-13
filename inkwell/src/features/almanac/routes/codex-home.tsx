@@ -1,4 +1,4 @@
-import { BookOpen, Download, Library, List, Plus, Search, Share2, Upload } from 'lucide-react'
+import { BookOpen, BookText, Download, Library, List, Plus, Search, Share2, Upload } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 
@@ -14,6 +14,7 @@ import { RelationshipMap } from '@/features/almanac/components/relationship-map'
 import { AlmanacSurvey } from '@/features/almanac/components/almanac-survey'
 import { exportAlmanac, importAlmanac } from '@/features/almanac/lib/run-almanac-io'
 import { saveExport } from '@/features/export/lib/save-file'
+import { chapterRepo, sceneRepo } from '@/lib/db/repositories'
 import { useProjectStore } from '@/stores/project-store'
 import { useCodexStore } from '@/stores/codex-store'
 import type { CodexEntryType } from '@/types'
@@ -69,6 +70,44 @@ export function CodexHome() {
           ? `Left alone because they already exist here: ${result.skipped.slice(0, 4).join(', ')}${result.skipped.length > 4 ? '…' : ''}`
           : undefined,
     })
+  }
+
+  /**
+   * The whole Almanac as one typeset PDF — the document series writers
+   * keep open and agents ask for. jsPDF rides in only when asked.
+   */
+  const [buildingBible, setBuildingBible] = useState(false)
+  async function handleWorldBible() {
+    if (!projectId) return
+    const project = projects.find((p) => p.id === projectId)
+    if (!project) return
+    setBuildingBible(true)
+    try {
+      const [{ buildWorldBiblePdf }, chapters, scenes] = await Promise.all([
+        import('@/features/almanac/lib/build-world-bible-pdf'),
+        chapterRepo.list(),
+        sceneRepo.list(),
+      ])
+      const built = await buildWorldBiblePdf({
+        project,
+        entries,
+        scenes: scenes.filter((s) => s.projectId === projectId),
+        chapterTitles: new Map(
+          chapters.filter((c) => c.projectId === projectId).map((c) => [c.id, c.title]),
+        ),
+      })
+      await saveExport({
+        filename: built.filename,
+        mimeType: 'application/pdf',
+        bytes: built.bytes,
+      })
+      toast({
+        title: 'World bible built',
+        description: `${built.entryCount} ${built.entryCount === 1 ? 'entry' : 'entries'}, typeset with portraits, relationships and the timeline.`,
+      })
+    } finally {
+      setBuildingBible(false)
+    }
   }
 
   const [query, setQuery] = useState('')
@@ -143,6 +182,16 @@ export function CodexHome() {
               {entries.length > 0 && (
                 <Button size="sm" variant="outline" onClick={() => void handleExportAlmanac()}>
                   <Download /> Export
+                </Button>
+              )}
+              {entries.length > 0 && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={buildingBible}
+                  onClick={() => void handleWorldBible()}
+                >
+                  <BookText /> {buildingBible ? 'Typesetting…' : 'World bible'}
                 </Button>
               )}
               {entries.length > 0 && (

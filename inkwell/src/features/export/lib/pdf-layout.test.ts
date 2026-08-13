@@ -114,3 +114,34 @@ describe('layoutBook', () => {
     }
   })
 })
+
+describe('chapter art', () => {
+  it('reserves the art box under the title and pushes text below it', () => {
+    const withArt = layout([
+      { title: 'Marta', paragraphs: ['She keeps the ford.'], art: { key: 'img-1', width: 124, height: 186 } },
+    ])
+    const artPage = withArt.find((p) => p.art)
+    expect(artPage?.art?.key).toBe('img-1')
+    // Centered on the 432pt page.
+    expect(artPage!.art!.x).toBeCloseTo(432 / 2 - 124 / 2)
+    const firstBody = artPage!.lines.find((l) => l.style === 'body')!
+    expect(firstBody.y).toBeGreaterThan(artPage!.art!.y + artPage!.art!.height)
+
+    // The same chapter without art starts its text higher up the page.
+    const without = layout([{ title: 'Marta', paragraphs: ['She keeps the ford.'] }])
+    const plainBody = without
+      .flatMap((p) => p.lines)
+      .find((l) => l.style === 'body')!
+    expect(plainBody.y).toBeLessThan(firstBody.y)
+  })
+
+  it('shrinks art wider than the measure to fit, keeping its shape', () => {
+    const pages = layout([
+      { title: 'Map', paragraphs: ['x'], art: { key: 'map', width: 600, height: 300 } },
+    ])
+    const art = pages.find((p) => p.art)!.art!
+    const textWidth = 432 - 76 - 58
+    expect(art.width).toBe(textWidth)
+    expect(art.height).toBeCloseTo(300 * (textWidth / 600))
+  })
+})
