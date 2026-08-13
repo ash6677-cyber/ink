@@ -17,7 +17,7 @@ type Mark =
   | { kind: 'word'; text: string }
 
 /** Longest phrases first, so "exclamation mark" wins over any one word. */
-const COMMANDS: [string, Mark][] = [
+const COMMAND_TABLE: [string, Mark][] = [
   ['exclamation mark', { kind: 'punct', char: '!' }],
   ['exclamation point', { kind: 'punct', char: '!' }],
   ['question mark', { kind: 'punct', char: '?' }],
@@ -32,7 +32,11 @@ const COMMANDS: [string, Mark][] = [
   ['colon', { kind: 'punct', char: ':' }],
   ['ellipsis', { kind: 'punct', char: '…' }],
   ['dash', { kind: 'word', text: '—' }],
-].sort((a, b) => b[0].split(' ').length - a[0].split(' ').length) as [string, Mark][]
+]
+
+const COMMANDS: [string, Mark][] = [...COMMAND_TABLE].sort(
+  (a, b) => b[0].split(' ').length - a[0].split(' ').length,
+)
 
 /** Turns a spoken transcript into typed prose: commands become marks,
  * spacing heals around them, and sentences open with a capital. */

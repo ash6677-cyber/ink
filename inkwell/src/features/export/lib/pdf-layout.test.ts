@@ -5,6 +5,7 @@ import {
   TRADE_6X9,
   wrapParagraph,
   type MeasureFn,
+  type PdfChapterInput,
 } from '@/features/export/lib/pdf-layout'
 
 // A ruler with no font in sight: every character 6pt wide at size 11,
@@ -13,7 +14,7 @@ const measure: MeasureFn = (text, size) => text.length * 6 * (size / 11)
 
 const words = (n: number) => Array.from({ length: n }, (_, i) => `word${i}`).join(' ')
 
-function layout(chapters: { title: string; paragraphs: string[] }[]) {
+function layout(chapters: PdfChapterInput[]) {
   return layoutBook({ title: 'The Book', author: 'A. Writer', chapters }, TRADE_6X9, measure)
 }
 
