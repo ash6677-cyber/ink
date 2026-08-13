@@ -11,7 +11,7 @@
 
 import type { AiPreset } from '@/types'
 
-export type AiFeature = 'chat' | 'editorActions' | 'bookCreator' | 'proofread' | 'continuity' | 'voice'
+export type AiFeature = 'chat' | 'editorActions' | 'bookCreator' | 'proofread' | 'continuity' | 'voice' | 'readThrough'
 
 /** Every place a key can be pinned: the text features above, plus the one
  * image feature, which has no preset of its own. */
@@ -24,6 +24,7 @@ export const AI_FEATURE_LABEL: Record<AiFeature, string> = {
   proofread: 'Proofread pass',
   continuity: 'Continuity sentinel',
   voice: 'Dialogue voice check',
+  readThrough: 'Whole-book read-through',
 }
 
 export const AI_KEYED_FEATURE_LABEL: Record<AiKeyedFeature, string> = {
