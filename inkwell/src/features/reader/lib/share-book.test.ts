@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { BookChapter } from '@/features/reader/lib/compile-book'
 import {
+  shouldShowWhatsNew,
   bookFromShared,
   chapterPayload,
   newShareId,
@@ -84,5 +85,27 @@ describe('chapterPayload → bookFromShared roundtrip', () => {
     const offTheWire = JSON.parse(JSON.stringify(payload)) as SharedChapterData
     const [rebuilt] = bookFromShared([offTheWire])
     expect(rebuilt.scenes[0].plainText).toBe('Across the wire.')
+  })
+})
+
+describe('shouldShowWhatsNew', () => {
+  const meta = { note: 'Chapter 9 rewritten, new ending.', noteAt: 200 }
+
+  it('shows a returning reader a note newer than their last visit', () => {
+    expect(shouldShowWhatsNew(meta, 100)).toBe(true)
+  })
+
+  it('never greets a first-time visitor — they have no "last visit"', () => {
+    expect(shouldShowWhatsNew(meta, null)).toBe(false)
+  })
+
+  it('stays quiet when the note is older than the last visit', () => {
+    expect(shouldShowWhatsNew(meta, 200)).toBe(false)
+    expect(shouldShowWhatsNew(meta, 300)).toBe(false)
+  })
+
+  it('stays quiet when there is no note at all', () => {
+    expect(shouldShowWhatsNew({ note: '', noteAt: 0 }, 100)).toBe(false)
+    expect(shouldShowWhatsNew({ note: '   ', noteAt: 999 }, 100)).toBe(false)
   })
 })

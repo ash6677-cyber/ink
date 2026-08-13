@@ -8,7 +8,7 @@
 import { resolveCoverThumbnail } from '@/features/covers/lib/resolve-cover'
 import type { BookChapter } from '@/features/reader/lib/compile-book'
 import type { PulsePing } from '@/features/reader/lib/drop-off'
-import { chapterPayload, newShareId } from '@/features/reader/lib/share-book'
+import { chapterPayload, newShareId, WHATS_NEW_MAX } from '@/features/reader/lib/share-book'
 import { COVER_MAX_EDGE, coverAcceptable } from '@/features/reader/lib/share-cover'
 import { projectRepo } from '@/lib/db/repositories'
 import type { Project } from '@/types'
@@ -52,12 +52,20 @@ async function deps() {
  * The id is minted once and kept on the project, so the link survives
  * updates — re-sharing a revised draft never breaks the URL already sent.
  */
-export async function publishShare(project: Project, book: BookChapter[]): Promise<string> {
+export async function publishShare(
+  project: Project,
+  book: BookChapter[],
+  /** A short note to returning readers — "Chapter 9 rewritten, new
+   * ending". Each publish carries its own note or none; an empty note
+   * clears the previous one, because it described a previous version. */
+  whatsNew = '',
+): Promise<string> {
   const { fs, db, uid } = await deps()
   const shareId = project.shareId ?? newShareId()
 
   const previousCount = project.shareChapterCount ?? 0
 
+  const note = whatsNew.trim().slice(0, WHATS_NEW_MAX)
   const cover = await encodeShareCover(project.id)
   await fs.setDoc(fs.doc(db, 'shares', shareId), {
     ownerUid: uid,
@@ -69,6 +77,7 @@ export async function publishShare(project: Project, book: BookChapter[]): Promi
     // omitting the field entirely keeps old shares and no-cover shares
     // byte-identical to what they were.
     ...(cover ? { cover } : {}),
+    ...(note ? { note, noteAt: Date.now() } : {}),
   })
   for (let i = 0; i < book.length; i++) {
     await fs.setDoc(fs.doc(db, 'shares', shareId, 'chapters', String(i)), {

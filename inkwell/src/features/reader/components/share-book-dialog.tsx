@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/use-toast'
 import type { BookChapter } from '@/features/reader/lib/compile-book'
 import { dropOffCurve, dropOffSummary, type DropOff } from '@/features/reader/lib/drop-off'
@@ -22,7 +23,7 @@ import {
   revokeShare,
   type ReaderNote,
 } from '@/features/reader/lib/share-actions'
-import { shareUrl } from '@/features/reader/lib/share-book'
+import { shareUrl, WHATS_NEW_MAX } from '@/features/reader/lib/share-book'
 import { totalWordCount } from '@/features/reader/lib/compile-book'
 import { useAuthStore } from '@/stores/auth-store'
 import type { Project } from '@/types'
@@ -50,6 +51,7 @@ export function ShareBookDialog({
   const [copied, setCopied] = useState(false)
   const [notes, setNotes] = useState<ReaderNote[] | null>(null)
   const [pulse, setPulse] = useState<DropOff | null>(null)
+  const [whatsNew, setWhatsNew] = useState('')
 
   const shared = Boolean(project.shareId)
   const words = totalWordCount(book)
@@ -105,8 +107,9 @@ export function ShareBookDialog({
   async function handlePublish() {
     setWorking('publish')
     try {
-      const shareId = await publishShare(project, book)
+      const shareId = await publishShare(project, book, whatsNew)
       onProjectChange({ ...project, shareId, shareChapterCount: book.length })
+      setWhatsNew('')
       toast({ title: shared ? 'Shared copy updated' : 'Your book is shareable' })
     } catch {
       toast({ title: 'Could not publish the copy', variant: 'destructive' })
@@ -250,6 +253,25 @@ export function ShareBookDialog({
                 ))}
               </ul>
             )}
+          </div>
+        )}
+
+        {shared && (
+          <div className="grid gap-1.5">
+            <label htmlFor="whats-new" className="text-xs font-medium text-muted-foreground">
+              What's new for returning readers <span className="font-normal">(optional)</span>
+            </label>
+            <Textarea
+              id="whats-new"
+              value={whatsNew}
+              onChange={(e) => setWhatsNew(e.target.value.slice(0, WHATS_NEW_MAX))}
+              rows={2}
+              placeholder="Chapter 9 rewritten, new ending."
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Rides along with the next update — a reader coming back sees it once, instead of
+              wondering whether anything changed.
+            </p>
           </div>
         )}
 

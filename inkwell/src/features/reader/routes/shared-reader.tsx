@@ -1,4 +1,4 @@
-import { BookX, Feather, MessageSquarePlus } from 'lucide-react'
+import { BookX, Feather, MessageSquarePlus, Sparkles, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 
@@ -12,7 +12,10 @@ import {
   pingChapterReached,
   pingSharePulse,
   QUOTE_MAX,
+  readShareLastSeen,
   readSharedBookmark,
+  shouldShowWhatsNew,
+  writeShareLastSeen,
   writeSharedBookmark,
   type FetchedShare,
 } from '@/features/reader/lib/share-book'
@@ -35,15 +38,23 @@ export function SharedReader() {
   const [chapterIndex, setChapterIndex] = useState(0)
   const [noteOpen, setNoteOpen] = useState(false)
   const [noteQuote, setNoteQuote] = useState('')
+  // Read before the visit overwrites it: whether this device has been
+  // here before, by the share's own clock. Local memory only.
+  const [lastSeen] = useState(() => readShareLastSeen(shareId))
+  const [whatsNewOpen, setWhatsNewOpen] = useState(true)
 
   useEffect(() => {
     let cancelled = false
     void fetchShare(shareId).then((result) => {
       if (!cancelled) {
         setShare(result)
-        // A found book counts as an open — ping the pulse (throttled to
-        // once an hour per device inside the helper).
-        if (result.state === 'found') pingSharePulse(shareId)
+        if (result.state === 'found') {
+          // A found book counts as an open — ping the pulse (throttled to
+          // once an hour per device inside the helper) — and this visit
+          // becomes the new "last time" for the what's-new banner.
+          pingSharePulse(shareId)
+          writeShareLastSeen(shareId, result.meta.updatedAt)
+        }
       }
     })
     return () => {
@@ -121,6 +132,26 @@ export function SharedReader() {
           </p>
         </div>
       </header>
+
+      {shouldShowWhatsNew(share.meta, lastSeen) && whatsNewOpen && (
+        <div
+          className="mx-4 mb-2 flex items-start gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm"
+          data-whats-new
+        >
+          <Sparkles className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
+          <p className="min-w-0 flex-1">
+            <span className="font-medium">Since your last visit:</span> {share.meta.note}
+          </p>
+          <button
+            type="button"
+            aria-label="Dismiss what's new"
+            className="rounded p-0.5 text-muted-foreground hover:text-foreground"
+            onClick={() => setWhatsNewOpen(false)}
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+      )}
 
       <BookStage
         coverDataUrl={share.meta.cover}

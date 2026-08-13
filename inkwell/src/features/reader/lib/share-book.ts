@@ -37,6 +37,9 @@ export interface SharedBookMeta {
   updatedAt: number
   /** The cover as a vetted image data URL, or null when the share has none. */
   cover: string | null
+  /** The writer's note to returning readers, when this publish carried one. */
+  note: string
+  noteAt: number
 }
 
 /**
@@ -146,6 +149,8 @@ export async function fetchShare(shareId: string): Promise<FetchedShare> {
       chapterCount: num(metaDoc, 'chapterCount'),
       updatedAt: num(metaDoc, 'updatedAt'),
       cover: parseShareCover(metaDoc.fields?.cover?.stringValue),
+      note: str(metaDoc, 'note'),
+      noteAt: num(metaDoc, 'noteAt'),
     }
 
     const chaptersRes = await fetch(`${restBase()}/shares/${shareId}/chapters?pageSize=300`)
@@ -245,6 +250,43 @@ export function pingChapterReached(shareId: string, chapterIndex: number): void 
         },
       }),
     }).catch(() => undefined)
+  }
+}
+
+/* ---- what's new ---------------------------------------------------------
+   Each re-publish can carry a short note ("Chapter 9 rewritten, new
+   ending"). A returning reader — recognised purely by this device's own
+   memory of their last visit, nothing sent anywhere — sees exactly what
+   changed since then, instead of wondering whether anything did. */
+
+export const WHATS_NEW_MAX = 300
+
+/** Whether this visit should open with the writer's note: only a returning
+ * reader (a last-visit mark exists), only when there is a note, and only
+ * when the note is newer than their last visit. */
+export function shouldShowWhatsNew(
+  meta: { note: string; noteAt: number },
+  lastSeenAt: number | null,
+): boolean {
+  return lastSeenAt !== null && meta.note.trim().length > 0 && meta.noteAt > lastSeenAt
+}
+
+/** When this device last opened the share, by the share's own clock
+ * (updatedAt), or null for a first visit. */
+export function readShareLastSeen(shareId: string): number | null {
+  try {
+    const raw = localStorage.getItem(`inkwell-share-seen-${shareId}`)
+    return raw === null ? null : Number(raw)
+  } catch {
+    return null
+  }
+}
+
+export function writeShareLastSeen(shareId: string, updatedAt: number): void {
+  try {
+    localStorage.setItem(`inkwell-share-seen-${shareId}`, String(updatedAt))
+  } catch {
+    // Storage blocked: every visit reads as the first. Harmless.
   }
 }
 
