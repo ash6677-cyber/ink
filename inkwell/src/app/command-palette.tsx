@@ -19,7 +19,9 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { VisuallyHidden } from '@/components/common/visually-hidden'
 import { ENTRY_TYPE_ICON } from '@/features/almanac/lib/entry-type'
+import { searchLibrary, type LibraryDoc } from '@/lib/search/library-search'
 import { searchProse } from '@/lib/search/prose-search'
+import { cardChatRepo, promiseRepo, submissionRepo, worldMapRepo } from '@/lib/db/repositories'
 import { matchesShortcut } from '@/lib/shortcuts'
 import { useCardStore } from '@/stores/card-store'
 import { useCodexStore } from '@/stores/codex-store'
@@ -29,7 +31,7 @@ import { useUiStore } from '@/stores/ui-store'
 
 interface PaletteEntry {
   id: string
-  section: 'Actions' | 'Scenes' | 'In the prose' | 'Almanac' | 'Characters' | 'Projects' | 'Navigate'
+  section: 'Actions' | 'Scenes' | 'In the prose' | 'In the library' | 'Almanac' | 'Characters' | 'Projects' | 'Navigate'
   label: string
   hint?: string
   icon: React.ComponentType<{ className?: string }>
@@ -67,6 +69,30 @@ export function CommandPalette() {
 
   const [query, setQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
+
+  // The small side tables — chats, promises, submissions, maps — fetched
+  // once per palette open so their CONTENT is searchable too. Each is tiny.
+  const [aux, setAux] = useState<{
+    chats: { id: string; cardId: string; projectId: string; title: string; messages: { content: string }[] }[]
+    promises: { id: string; projectId: string; title: string; quote: string; note: string }[]
+    submissions: { id: string; projectId: string; market: string; contact: string; notes: string; status: string }[]
+    maps: { id: string; projectId: string; name: string }[]
+  }>({ chats: [], promises: [], submissions: [], maps: [] })
+  useEffect(() => {
+    if (!open) return
+    let cancelled = false
+    void Promise.all([
+      cardChatRepo.list(),
+      promiseRepo.list(),
+      submissionRepo.list(),
+      worldMapRepo.list(),
+    ]).then(([chats, promises, submissions, maps]) => {
+      if (!cancelled) setAux({ chats, promises, submissions, maps })
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [open])
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -234,6 +260,105 @@ export function CommandPalette() {
   ])
 
   /**
+   * The whole library as one searchable memory: Almanac bodies and
+   * attributes, character sheets, chat transcripts, promises, submissions,
+   * maps — content search, ranked, scoped to the open project.
+   */
+  const libraryEntries = useMemo<PaletteEntry[]>(() => {
+    if (!editorProjectId) return []
+    const docs: LibraryDoc[] = []
+    for (const entry of codexEntries) {
+      docs.push({
+        id: `almanac-${entry.id}`,
+        kind: 'almanac',
+        title: entry.name,
+        body: [
+          entry.aliases.join(' '),
+          entry.summary,
+          entry.plainText,
+          entry.attributes.map((a) => `${a.key} ${a.value}`).join(' '),
+        ].join('\n'),
+        hint: 'Almanac',
+      })
+    }
+    for (const card of cards) {
+      docs.push({
+        id: `character-${card.id}`,
+        kind: 'character',
+        title: card.displayName,
+        body: [card.description, card.personality, card.scenario, card.voiceNotes].join('\n'),
+        hint: 'Character',
+      })
+    }
+    for (const chat of aux.chats.filter((c) => c.projectId === editorProjectId)) {
+      docs.push({
+        id: `chat-${chat.id}`,
+        kind: 'chat',
+        title: chat.title || 'Chat',
+        body: chat.messages.map((m) => m.content).join('\n'),
+        hint: 'Chat',
+      })
+    }
+    for (const promise of aux.promises.filter((p) => p.projectId === editorProjectId)) {
+      docs.push({
+        id: `promise-${promise.id}`,
+        kind: 'promise',
+        title: promise.title,
+        body: `${promise.quote}\n${promise.note}`,
+        hint: 'Promise',
+      })
+    }
+    for (const submission of aux.submissions.filter((p) => p.projectId === editorProjectId)) {
+      docs.push({
+        id: `submission-${submission.id}`,
+        kind: 'submission',
+        title: submission.market,
+        body: `${submission.contact}\n${submission.notes}`,
+        hint: 'Submission',
+      })
+    }
+    for (const map of aux.maps.filter((m) => m.projectId === editorProjectId)) {
+      docs.push({ id: `map-${map.id}`, kind: 'map', title: map.name, body: '', hint: 'Map' })
+    }
+
+    return searchLibrary(docs, query).map((match) => {
+      const [kindTag, recordId] = match.doc.id.split(/-(.+)/) as [string, string]
+      const run = () => {
+        switch (kindTag) {
+          case 'almanac':
+            navigate(`/almanac/${recordId}?project=${editorProjectId}`)
+            break
+          case 'character':
+            navigate(`/playground/cards/${recordId}?project=${editorProjectId}`)
+            break
+          case 'chat': {
+            const chat = aux.chats.find((c) => c.id === recordId)
+            navigate(`/playground/cards/${chat?.cardId ?? ''}?project=${editorProjectId}`)
+            break
+          }
+          case 'promise':
+            navigate(`/planning?project=${editorProjectId}&view=promises`)
+            break
+          case 'submission':
+            navigate(`/planning?project=${editorProjectId}&view=submissions`)
+            break
+          case 'map':
+            navigate(`/almanac?project=${editorProjectId}`)
+            break
+        }
+      }
+      return {
+        id: `library-${match.doc.id}`,
+        section: 'In the library' as const,
+        label: match.snippet,
+        hint: `${match.doc.title} · ${match.doc.hint ?? ''}`,
+        icon: Search,
+        run,
+      }
+    })
+  }, [editorProjectId, codexEntries, cards, aux, query, navigate])
+
+  /**
    * The book's own words as results. Only the open project's scenes are in
    * memory, so that's the honest search scope; selecting one hands the query
    * to the editor's find bar so the match arrives already highlighted.
@@ -260,14 +385,15 @@ export function CommandPalette() {
     const named = entries.filter(
       (e) => e.label.toLowerCase().includes(q) || e.hint?.toLowerCase().includes(q),
     )
-    return [...named, ...proseEntries]
-  }, [entries, proseEntries, query])
+    return [...named, ...proseEntries, ...libraryEntries]
+  }, [entries, proseEntries, libraryEntries, query])
 
   const grouped = useMemo(() => {
     const sections: PaletteEntry['section'][] = [
       'Actions',
       'Scenes',
       'In the prose',
+      'In the library',
       'Almanac',
       'Characters',
       'Projects',

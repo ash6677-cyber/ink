@@ -77,7 +77,7 @@ export function PlanningHome() {
       {status === 'loading' || status === 'idle' ? (
         <p className="p-6 text-center text-sm text-muted-foreground">Loading…</p>
       ) : (
-        <Tabs defaultValue="corkboard" className="flex min-h-0 flex-1 flex-col">
+        <Tabs defaultValue={searchParams.get('view') ?? 'corkboard'} className="flex min-h-0 flex-1 flex-col">
           <TabsList className="mx-4 mt-3 w-fit">
             <TabsTrigger value="corkboard">Outline</TabsTrigger>
             <TabsTrigger value="status">Status board</TabsTrigger>
