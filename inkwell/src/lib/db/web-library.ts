@@ -51,6 +51,7 @@ export const BACKED_UP_TABLES = [
   'manuscriptTemplates',
   'themes',
   'revisionPasses',
+  'promises',
 ] as const
 
 /**

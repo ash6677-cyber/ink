@@ -16,6 +16,7 @@ import type {
   Series,
   SessionLog,
   Snapshot,
+  StoryPromise,
   Theme,
 } from '@/types'
 
@@ -55,6 +56,7 @@ export interface LibraryDocument {
   manuscriptTemplates: ManuscriptTemplate[]
   themes: Theme[]
   revisionPasses: RevisionPass[]
+  promises: StoryPromise[]
 }
 
 const ARRAY_KEYS = [
@@ -77,6 +79,7 @@ const ARRAY_KEYS = [
   'manuscriptTemplates',
   'themes',
   'revisionPasses',
+  'promises',
 ] as const
 
 export function emptyLibrary(): LibraryDocument {
@@ -97,6 +100,14 @@ export function migrateLibrary(raw: unknown): LibraryDocument {
   const version = typeof doc.schemaVersion === 'number' ? doc.schemaVersion : 0
   if (version < 1) doc = migrateV0ToV1(doc)
   if (version < 2) doc = migrateV1ToV2(doc)
+  // Tables added after a document's schema version was current arrive as
+  // missing keys, and only the v0 step used to backfill them — a document
+  // already at the current version skipped every step and loaded with
+  // `undefined` where a new table's array should be, which crashed hydrate.
+  // Backfilling unconditionally makes adding a table safe forever.
+  for (const key of ARRAY_KEYS) {
+    if (!Array.isArray(doc[key])) doc[key] = []
+  }
   return doc as unknown as LibraryDocument
 }
 

@@ -19,6 +19,7 @@ import type {
   Series,
   SessionLog,
   Snapshot,
+  StoryPromise,
   Theme,
 } from '@/types'
 
@@ -51,6 +52,7 @@ export class InkwellDB extends Dexie {
   manuscriptTemplates!: EntityTable<ManuscriptTemplate, 'id'>
   themes!: EntityTable<Theme, 'id'>
   revisionPasses!: EntityTable<RevisionPass, 'id'>
+  promises!: EntityTable<StoryPromise, 'id'>
 
   constructor(name = 'inkwell') {
     super(name)
@@ -90,6 +92,11 @@ export class InkwellDB extends Dexie {
     this.version(4).stores({
       revisionPasses: 'id, projectId, createdAt',
     })
+
+    // Narrative promises and their payoffs — Chekhov's ledger.
+    this.version(5).stores({
+      promises: 'id, projectId, setupSceneId, updatedAt',
+    })
   }
 }
 
@@ -113,6 +120,7 @@ interface DbTables {
   manuscriptTemplates: TrashableTable<ManuscriptTemplate>
   themes: TrashableTable<Theme>
   revisionPasses: TrashableTable<RevisionPass>
+  promises: TrashableTable<StoryPromise>
 }
 
 /** The raw tables, before soft-delete or sync wrapping. */

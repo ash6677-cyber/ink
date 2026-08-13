@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { CorkboardView } from '@/features/planning/components/corkboard-view'
 import { LabelManagerDialog } from '@/features/planning/components/label-manager'
 import { PacingView } from '@/features/planning/components/pacing-view'
+import { PromisesView } from '@/features/planning/components/promises-view'
 import { StatusBoardView } from '@/features/planning/components/status-board-view'
 import { TimelineView } from '@/features/planning/components/timeline-view'
 import { projectRepo } from '@/lib/db/repositories'
@@ -80,6 +81,7 @@ export function PlanningHome() {
             <TabsTrigger value="status">Status board</TabsTrigger>
             <TabsTrigger value="timeline">Timeline</TabsTrigger>
             <TabsTrigger value="pacing">Pacing</TabsTrigger>
+            <TabsTrigger value="promises">Promises</TabsTrigger>
           </TabsList>
           <TabsContent value="corkboard" className="min-h-0 flex-1">
             <CorkboardView projectId={projectId} structureMode={structureMode} />
@@ -92,6 +94,9 @@ export function PlanningHome() {
           </TabsContent>
           <TabsContent value="pacing" className="min-h-0 flex-1">
             <PacingView projectId={projectId} />
+          </TabsContent>
+          <TabsContent value="promises" className="min-h-0 flex-1">
+            <PromisesView projectId={projectId} />
           </TabsContent>
         </Tabs>
       )}

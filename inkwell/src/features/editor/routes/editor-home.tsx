@@ -37,6 +37,7 @@ import { ManuscriptSearchPanel } from '@/features/editor/components/manuscript-s
 import { SceneEditor } from '@/features/editor/components/scene-editor'
 import { SceneMetadataDrawer } from '@/features/editor/components/scene-metadata-drawer'
 import { DraftsButton, DraftsPanel } from '@/features/editor/components/drafts-panel'
+import { MarkPromiseButton } from '@/features/editor/components/mark-promise-dialog'
 import { SprintControl } from '@/features/editor/components/sprint-control'
 import { WordGoalControl } from '@/features/editor/components/word-goal-control'
 import { HandoffBanner } from '@/features/book-creator/components/handoff-banner'
@@ -678,6 +679,8 @@ export function EditorHome() {
               )}
 
               {activeScene && <ReadAloudButton text={activeScene.plainText} />}
+
+              {activeScene && <MarkPromiseButton editor={liveEditor} sceneId={activeScene.id} />}
 
               <Tooltip>
                 <TooltipTrigger asChild>

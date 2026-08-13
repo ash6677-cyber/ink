@@ -85,6 +85,22 @@ export interface RevisionPass extends BaseEntity {
   wordCount: number
 }
 
+/**
+ * A narrative promise — Chekhov's gun, tracked. Made in one scene (the
+ * setup: the locket, the loaded rifle, the unexplained scar), optionally
+ * paid off in another. The ledger's whole job is the ones where
+ * `payoffSceneId` is still null when the book ends.
+ */
+export interface StoryPromise extends BaseEntity {
+  projectId: string
+  title: string
+  /** The passage the writer selected when marking the setup, if any. */
+  quote: string
+  note: string
+  setupSceneId: string
+  payoffSceneId: string | null
+}
+
 export interface Snapshot extends BaseEntity {
   sceneId: string
   content: RichContent

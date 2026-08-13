@@ -20,6 +20,7 @@ export interface CascadeSource {
   goals: { id: string; projectId: string | null }[]
   sessionLogs: { id: string; projectId: string }[]
   revisionPasses: { id: string; projectId: string }[]
+  promises: { id: string; projectId: string; setupSceneId: string }[]
   codexEntries: { id: string; projectId: string | null }[]
   characterCards: { id: string; projectId: string }[]
   cardChats: { id: string; projectId: string }[]
@@ -32,7 +33,7 @@ export type CascadePlan = Partial<Record<keyof CascadeSource, string[]>>
 export function emptyCascadeSource(): CascadeSource {
   return {
     chapters: [], scenes: [], snapshots: [], covers: [], goals: [],
-    sessionLogs: [], revisionPasses: [], codexEntries: [], characterCards: [], cardChats: [], lorebooks: [],
+    sessionLogs: [], revisionPasses: [], promises: [], codexEntries: [], characterCards: [], cardChats: [], lorebooks: [],
   }
 }
 
@@ -51,6 +52,7 @@ export function cascadeForProject(projectId: string, source: CascadeSource): Cas
     goals: ids(source.goals, (g) => g.projectId === projectId),
     sessionLogs: ids(source.sessionLogs, (s) => s.projectId === projectId),
     revisionPasses: ids(source.revisionPasses, (s) => s.projectId === projectId),
+    promises: ids(source.promises, (p) => p.projectId === projectId),
     // Likewise a codex entry scoped to a series rather than a project: the
     // other books in the series still need it.
     codexEntries: ids(source.codexEntries, (e) => e.projectId === projectId),
@@ -68,12 +70,18 @@ export function cascadeForChapter(chapterId: string, source: CascadeSource): Cas
   return prune({
     scenes: scenes.map((scene) => scene.id),
     snapshots: ids(source.snapshots, (s) => sceneIds.has(s.sceneId)),
+    // A promise whose setup scene is gone points at nothing; one whose
+    // payoff scene is gone merely reopens, so those survive untouched.
+    promises: ids(source.promises, (p) => sceneIds.has(p.setupSceneId)),
   })
 }
 
-/** A scene and its history. */
+/** A scene, its history, and any promises set up in it. */
 export function cascadeForScene(sceneId: string, source: CascadeSource): CascadePlan {
-  return prune({ snapshots: ids(source.snapshots, (s) => s.sceneId === sceneId) })
+  return prune({
+    snapshots: ids(source.snapshots, (s) => s.sceneId === sceneId),
+    promises: ids(source.promises, (p) => p.setupSceneId === sceneId),
+  })
 }
 
 /** How many records a deletion would take with it, for the confirmation. */

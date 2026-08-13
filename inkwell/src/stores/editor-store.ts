@@ -1,11 +1,11 @@
 import { create } from 'zustand'
 
-import { chapterRepo, revisionPassRepo, sceneRepo, snapshotRepo } from '@/lib/db/repositories'
+import { chapterRepo, promiseRepo, revisionPassRepo, sceneRepo, snapshotRepo } from '@/lib/db/repositories'
 import { mergeLabels } from '@/lib/labels'
 import { useStatsStore } from '@/stores/stats-store'
 import { binChapter, binScene } from '@/stores/trash-store'
 import { baselineLabel } from '@/features/editor/lib/revision'
-import type { Chapter, ChapterKind, RevisionPass, Scene, SceneStatus, Snapshot } from '@/types'
+import type { Chapter, ChapterKind, RevisionPass, Scene, SceneStatus, Snapshot, StoryPromise } from '@/types'
 
 type LoadStatus = 'idle' | 'loading' | 'ready' | 'error'
 
@@ -13,6 +13,7 @@ interface EditorStoreState {
   projectId: string | null
   chapters: Chapter[]
   revisionPasses: RevisionPass[]
+  promises: StoryPromise[]
   scenes: Scene[]
   activeSceneId: string | null
   status: LoadStatus
@@ -47,6 +48,12 @@ interface EditorStoreState {
   /** The frozen scene texts of one pass, for judging the revision. */
   loadBaselines: (pass: RevisionPass) => Promise<Snapshot[]>
 
+  /** Marks a narrative setup — Chekhov's gun goes on the ledger. */
+  addPromise: (input: { title: string; quote: string; note?: string; setupSceneId: string }) => Promise<StoryPromise>
+  /** Links (or with null, unlinks) the scene where a promise pays off. */
+  setPromisePayoff: (id: string, payoffSceneId: string | null) => Promise<void>
+  removePromise: (id: string) => Promise<void>
+
   /** Renames a label on every scene carrying it; renaming onto an existing
    * label is the merge operation — the two become one, deduplicated. */
   renameLabel: (from: string, to: string) => Promise<void>
@@ -66,6 +73,7 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
   projectId: null,
   chapters: [],
   revisionPasses: [],
+  promises: [],
   scenes: [],
   activeSceneId: null,
   status: 'idle',
@@ -74,10 +82,11 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
   loadProject: async (projectId) => {
     set({ status: 'loading', error: null, projectId })
     try {
-      const [allChapters, allScenes, allPasses] = await Promise.all([
+      const [allChapters, allScenes, allPasses, allPromises] = await Promise.all([
         chapterRepo.list(),
         sceneRepo.list(),
         revisionPassRepo.list(),
+        promiseRepo.list(),
       ])
       const chapters = allChapters
         .filter((c) => c.projectId === projectId)
@@ -94,6 +103,9 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
         chapters,
         scenes,
         revisionPasses: allPasses
+          .filter((p) => p.projectId === projectId)
+          .sort((a, b) => a.createdAt - b.createdAt),
+        promises: allPromises
           .filter((p) => p.projectId === projectId)
           .sort((a, b) => a.createdAt - b.createdAt),
         status: 'ready',
@@ -276,6 +288,33 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
     const label = baselineLabel(pass.name)
     const all = await snapshotRepo.list()
     return all.filter((snapshot) => snapshot.label === label)
+  },
+
+  addPromise: async (input) => {
+    const { projectId, promises } = get()
+    if (!projectId) throw new Error('No project open.')
+    const created = await promiseRepo.create({
+      projectId,
+      title: input.title.trim() || 'An unnamed promise',
+      quote: input.quote,
+      note: input.note ?? '',
+      setupSceneId: input.setupSceneId,
+      payoffSceneId: null,
+    })
+    set({ promises: [...promises, created] })
+    return created
+  },
+
+  setPromisePayoff: async (id, payoffSceneId) => {
+    await promiseRepo.update(id, { payoffSceneId })
+    set({
+      promises: get().promises.map((p) => (p.id === id ? { ...p, payoffSceneId } : p)),
+    })
+  },
+
+  removePromise: async (id) => {
+    await promiseRepo.remove(id)
+    set({ promises: get().promises.filter((p) => p.id !== id) })
   },
 
   renameLabel: async (from, to) => {

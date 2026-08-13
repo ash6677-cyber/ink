@@ -69,6 +69,18 @@ describe('migrateLibrary', () => {
     expect(migrated).toEqual(current)
   })
 
+  it('backfills tables added after a document was already current', () => {
+    // A document saved at the current schema version before newer tables
+    // existed skips every migration step — the unconditional backfill is
+    // what keeps it loadable. `promises` is exactly such a late addition.
+    const doc = { ...v0LibraryFixture(), schemaVersion: CURRENT_SCHEMA_VERSION }
+    const migrated = migrateLibrary(doc)
+    expect(migrated.promises).toEqual([])
+    expect(migrated.revisionPasses).toEqual([])
+    expect(migrated.themes).toEqual([])
+    expect(migrated.projects[0].title).toBe('Old Book')
+  })
+
   it('never throws on garbage input and returns a valid empty-shaped document', () => {
     for (const input of [null, undefined, 'not an object', 42, [], {}]) {
       const migrated = migrateLibrary(input)

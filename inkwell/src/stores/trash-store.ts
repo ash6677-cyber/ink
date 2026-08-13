@@ -28,7 +28,8 @@ const ROOT_LABEL: Record<RootTable, string> = {
 /** Every table a cascade can reach, so restore and purge know where to look. */
 const CASCADE_TABLES = [
   'chapters', 'scenes', 'snapshots', 'covers', 'goals',
-  'sessionLogs', 'codexEntries', 'characterCards', 'cardChats', 'lorebooks',
+  'sessionLogs', 'revisionPasses', 'promises',
+  'codexEntries', 'characterCards', 'cardChats', 'lorebooks',
 ] as const
 
 export interface BinEntry {
@@ -56,17 +57,20 @@ interface TrashState {
 async function readCascadeSource(): Promise<CascadeSource> {
   const [
     chapters, scenes, snapshots, covers, goals,
-    sessionLogs, codexEntries, characterCards, cardChats, lorebooks,
+    sessionLogs, revisionPasses, promises,
+    codexEntries, characterCards, cardChats, lorebooks,
   ] = await Promise.all([
     db.chapters.toArray(), db.scenes.toArray(), db.snapshots.toArray(),
     db.covers.toArray(), db.goals.toArray(), db.sessionLogs.toArray(),
+    db.revisionPasses.toArray(), db.promises.toArray(),
     db.codexEntries.toArray(), db.characterCards.toArray(),
     db.cardChats.toArray(), db.lorebooks.toArray(),
   ])
   return {
     ...emptyCascadeSource(),
     chapters, scenes, snapshots, covers, goals,
-    sessionLogs, codexEntries, characterCards, cardChats, lorebooks,
+    sessionLogs, revisionPasses, promises,
+    codexEntries, characterCards, cardChats, lorebooks,
   }
 }
 
