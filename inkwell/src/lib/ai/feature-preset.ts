@@ -15,7 +15,7 @@ export type AiFeature = 'chat' | 'editorActions' | 'bookCreator' | 'proofread' |
 
 /** Every place a key can be pinned: the text features above, plus the one
  * image feature, which has no preset of its own. */
-export type AiKeyedFeature = AiFeature | 'coverConcepts'
+export type AiKeyedFeature = AiFeature | 'coverConcepts' | 'dictation'
 
 export const AI_FEATURE_LABEL: Record<AiFeature, string> = {
   editorActions: 'Editor actions',
@@ -30,6 +30,7 @@ export const AI_FEATURE_LABEL: Record<AiFeature, string> = {
 export const AI_KEYED_FEATURE_LABEL: Record<AiKeyedFeature, string> = {
   ...AI_FEATURE_LABEL,
   coverConcepts: 'AI cover concepts',
+  dictation: 'Dictation (Whisper fallback)',
 }
 
 /** Which key each feature runs on; a feature not in the map follows its

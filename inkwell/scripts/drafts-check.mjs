@@ -37,7 +37,7 @@ const eventually = async (p, t = 20000) => {
 }
 
 const browser = await chromium.launch({ executablePath: CHROMIUM_PATH, args: ['--no-sandbox'] })
-const ctx = await browser.newContext({ viewport: { width: 1400, height: 950 } })
+const ctx = await browser.newContext({ viewport: { width: 1600, height: 950 } })
 const page = await ctx.newPage()
 const errors = []
 page.on('pageerror', (e) => errors.push(String(e)))

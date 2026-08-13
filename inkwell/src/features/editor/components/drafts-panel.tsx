@@ -211,7 +211,7 @@ export function DraftsButton({ onClick }: { onClick: () => void }) {
     <Button
       variant="ghost"
       size="sm"
-      className="hidden gap-1.5 text-muted-foreground sm:inline-flex"
+      className="hidden gap-1.5 text-muted-foreground 2xl:inline-flex"
       onClick={onClick}
       aria-label="Open drafts and revision progress"
     >

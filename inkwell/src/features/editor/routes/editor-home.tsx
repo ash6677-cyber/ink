@@ -37,6 +37,7 @@ import { FindInScene } from '@/features/editor/components/find-in-scene'
 import { ManuscriptSearchPanel } from '@/features/editor/components/manuscript-search-panel'
 import { SceneEditor } from '@/features/editor/components/scene-editor'
 import { SceneMetadataDrawer } from '@/features/editor/components/scene-metadata-drawer'
+import { DictationButton } from '@/features/editor/components/dictation-button'
 import { DraftsButton, DraftsPanel } from '@/features/editor/components/drafts-panel'
 import { MarkPromiseButton } from '@/features/editor/components/mark-promise-dialog'
 import { ReadThroughPanel } from '@/features/editor/components/read-through-panel'
@@ -581,7 +582,7 @@ export function EditorHome() {
 
             <div className="flex items-center gap-1">
               <span
-                className="mr-2 hidden text-xs text-muted-foreground sm:inline"
+                className="mr-2 hidden whitespace-nowrap text-xs text-muted-foreground 2xl:inline"
                 title="Every word in this book"
               >
                 {formatWordCount(bookWordCount)} words in this book
@@ -589,16 +590,19 @@ export function EditorHome() {
               <WordGoalControl projectId={projectId ?? ''} />
               <SprintControl bookWordCount={bookWordCount} projectId={projectId} />
               <DraftsButton onClick={() => setDraftsOpen(true)} />
-              <Button
-                variant="ghost"
-                size="sm"
-                className="hidden gap-1.5 text-muted-foreground sm:inline-flex"
-                onClick={() => setReadThroughOpen(true)}
-                aria-label="Whole-book read-through"
-              >
-                <BookOpenCheck className="size-3.5" />
-                Read-through
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setReadThroughOpen(true)}
+                    aria-label="Whole-book read-through"
+                  >
+                    <BookOpenCheck className="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Whole-book read-through</TooltipContent>
+              </Tooltip>
               {activeScene && saveStatus === 'failed' && (
                 <span
                   role="alert"
@@ -692,6 +696,8 @@ export function EditorHome() {
               )}
 
               {activeScene && <ReadAloudButton text={activeScene.plainText} />}
+
+              {activeScene && <DictationButton editor={liveEditor} />}
 
               {activeScene && <MarkPromiseButton editor={liveEditor} sceneId={activeScene.id} />}
 

@@ -139,7 +139,7 @@ export function SprintControl({
       <Button
         variant="ghost"
         size="sm"
-        className="hidden gap-1.5 text-muted-foreground sm:inline-flex"
+        className="hidden gap-1.5 text-muted-foreground 2xl:inline-flex"
         onClick={() => setSetupOpen(true)}
         aria-label="Start a writing sprint"
       >

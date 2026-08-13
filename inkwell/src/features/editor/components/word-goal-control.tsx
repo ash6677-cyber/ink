@@ -48,7 +48,7 @@ export function WordGoalControl({ projectId }: { projectId: string }) {
         }}
         aria-label="Edit your daily word goal"
         title="Your daily word goal — click to change it"
-        className="mr-2 hidden items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground sm:inline-flex pointer-coarse:min-h-11"
+        className="mr-2 hidden items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground 2xl:inline-flex pointer-coarse:min-h-11"
       >
         <Target className="size-3" aria-hidden />
         {target.toLocaleString()}/day
