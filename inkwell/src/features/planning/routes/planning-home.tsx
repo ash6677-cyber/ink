@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/common/page-header'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { CorkboardView } from '@/features/planning/components/corkboard-view'
+import { DialogueView } from '@/features/planning/components/dialogue-view'
 import { LabelManagerDialog } from '@/features/planning/components/label-manager'
 import { PacingView } from '@/features/planning/components/pacing-view'
 import { PromisesView } from '@/features/planning/components/promises-view'
@@ -82,6 +83,7 @@ export function PlanningHome() {
             <TabsTrigger value="timeline">Timeline</TabsTrigger>
             <TabsTrigger value="pacing">Pacing</TabsTrigger>
             <TabsTrigger value="promises">Promises</TabsTrigger>
+            <TabsTrigger value="dialogue">Dialogue</TabsTrigger>
           </TabsList>
           <TabsContent value="corkboard" className="min-h-0 flex-1">
             <CorkboardView projectId={projectId} structureMode={structureMode} />
@@ -97,6 +99,9 @@ export function PlanningHome() {
           </TabsContent>
           <TabsContent value="promises" className="min-h-0 flex-1">
             <PromisesView projectId={projectId} />
+          </TabsContent>
+          <TabsContent value="dialogue" className="min-h-0 flex-1">
+            <DialogueView projectId={projectId} />
           </TabsContent>
         </Tabs>
       )}
