@@ -41,6 +41,7 @@ import { DictationButton } from '@/features/editor/components/dictation-button'
 import { DraftsButton, DraftsPanel } from '@/features/editor/components/drafts-panel'
 import { MarkPromiseButton } from '@/features/editor/components/mark-promise-dialog'
 import { ReadThroughPanel } from '@/features/editor/components/read-through-panel'
+import { SoundscapeControl } from '@/features/editor/components/soundscape-control'
 import { SprintControl } from '@/features/editor/components/sprint-control'
 import { WordGoalControl } from '@/features/editor/components/word-goal-control'
 import { HandoffBanner } from '@/features/book-creator/components/handoff-banner'
@@ -589,6 +590,7 @@ export function EditorHome() {
               </span>
               <WordGoalControl projectId={projectId ?? ''} />
               <SprintControl bookWordCount={bookWordCount} projectId={projectId} />
+              <SoundscapeControl />
               <DraftsButton onClick={() => setDraftsOpen(true)} />
               <Tooltip>
                 <TooltipTrigger asChild>
