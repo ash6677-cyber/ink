@@ -12,6 +12,7 @@ import { LabelManagerDialog } from '@/features/planning/components/label-manager
 import { PacingView } from '@/features/planning/components/pacing-view'
 import { PromisesView } from '@/features/planning/components/promises-view'
 import { StatusBoardView } from '@/features/planning/components/status-board-view'
+import { SubmissionsView } from '@/features/planning/components/submissions-view'
 import { TimelineView } from '@/features/planning/components/timeline-view'
 import { projectRepo } from '@/lib/db/repositories'
 import { useEditorStore } from '@/stores/editor-store'
@@ -84,6 +85,7 @@ export function PlanningHome() {
             <TabsTrigger value="pacing">Pacing</TabsTrigger>
             <TabsTrigger value="promises">Promises</TabsTrigger>
             <TabsTrigger value="dialogue">Dialogue</TabsTrigger>
+            <TabsTrigger value="submissions">Submissions</TabsTrigger>
           </TabsList>
           <TabsContent value="corkboard" className="min-h-0 flex-1">
             <CorkboardView projectId={projectId} structureMode={structureMode} />
@@ -102,6 +104,9 @@ export function PlanningHome() {
           </TabsContent>
           <TabsContent value="dialogue" className="min-h-0 flex-1">
             <DialogueView projectId={projectId} />
+          </TabsContent>
+          <TabsContent value="submissions" className="min-h-0 flex-1">
+            <SubmissionsView projectId={projectId} />
           </TabsContent>
         </Tabs>
       )}

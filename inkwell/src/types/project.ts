@@ -30,6 +30,27 @@ export interface BookMatter {
   aboutAuthor: string
 }
 
+export type SubmissionStatus = 'shortlist' | 'queried' | 'partial' | 'full' | 'pass' | 'offer'
+
+/**
+ * One market on the querying trail — an agent, a magazine, a press — and
+ * where this book stands with them. The unglamorous tool every querying
+ * writer otherwise keeps in a sad spreadsheet. Local-first, per book.
+ */
+export interface Submission extends BaseEntity {
+  projectId: string
+  /** Who it went to: agent, magazine, press. */
+  market: string
+  /** A person, an email, a portal URL — whatever finds them again. */
+  contact: string
+  status: SubmissionStatus
+  /** When the query went out; null while still on the shortlist. */
+  sentAt: number | null
+  /** When to expect (or chase) a response; null when open-ended. */
+  respondBy: number | null
+  notes: string
+}
+
 export interface Project extends BaseEntity {
   title: string
   author: string

@@ -17,6 +17,7 @@ import type {
   SessionLog,
   Snapshot,
   StoryPromise,
+  Submission,
   Theme,
   WorldMap,
 } from '@/types'
@@ -59,6 +60,7 @@ export interface LibraryDocument {
   revisionPasses: RevisionPass[]
   promises: StoryPromise[]
   worldMaps: WorldMap[]
+  submissions: Submission[]
 }
 
 const ARRAY_KEYS = [
@@ -83,6 +85,7 @@ const ARRAY_KEYS = [
   'revisionPasses',
   'promises',
   'worldMaps',
+  'submissions',
 ] as const
 
 export function emptyLibrary(): LibraryDocument {

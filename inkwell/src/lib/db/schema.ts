@@ -20,6 +20,7 @@ import type {
   SessionLog,
   Snapshot,
   StoryPromise,
+  Submission,
   Theme,
   WorldMap,
 } from '@/types'
@@ -55,6 +56,7 @@ export class InkwellDB extends Dexie {
   revisionPasses!: EntityTable<RevisionPass, 'id'>
   promises!: EntityTable<StoryPromise, 'id'>
   worldMaps!: EntityTable<WorldMap, 'id'>
+  submissions!: EntityTable<Submission, 'id'>
 
   constructor(name = 'inkwell') {
     super(name)
@@ -104,6 +106,11 @@ export class InkwellDB extends Dexie {
     this.version(6).stores({
       worldMaps: 'id, projectId, updatedAt',
     })
+
+    // The querying trail: who has this book, and where it stands.
+    this.version(7).stores({
+      submissions: 'id, projectId, status, updatedAt',
+    })
   }
 }
 
@@ -129,6 +136,7 @@ interface DbTables {
   revisionPasses: TrashableTable<RevisionPass>
   promises: TrashableTable<StoryPromise>
   worldMaps: TrashableTable<WorldMap>
+  submissions: TrashableTable<Submission>
 }
 
 /** The raw tables, before soft-delete or sync wrapping. */
