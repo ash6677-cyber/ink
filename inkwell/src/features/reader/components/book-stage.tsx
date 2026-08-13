@@ -58,6 +58,7 @@ export function BookStage({
   projectId,
   coverDataUrl,
   onChapterChange,
+  onDeepestChapterChange,
   initialPage,
   onPageChange,
 }: {
@@ -72,6 +73,11 @@ export function BookStage({
   /** Fires as reading moves between chapters — the shared reader anchors
    * a beta reader's notes to wherever they currently are. */
   onChapterChange?: (chapterIndex: number) => void
+  /** Fires with the deepest chapter visible on the spread — the honest
+   * "how far did they get" signal. Distinct from onChapterChange, which
+   * names the page under the reader's eye: on a two-page spread the right
+   * page can be a chapter deeper than the left. */
+  onDeepestChapterChange?: (chapterIndex: number) => void
   /** Where to open — a remembered bookmark. Applied once, when the book is
    * first typeset (it can't land before the pages are measured). */
   initialPage?: number
@@ -163,6 +169,15 @@ export function BookStage({
   useEffect(() => {
     onChapterChange?.(currentChapter)
   }, [currentChapter, onChapterChange])
+
+  // The rightmost visible page's chapter, for depth reporting: a spread
+  // whose right page opens the final chapter has reached it, even though
+  // the page under the eye is still the one before.
+  const lastVisible = flatPages[Math.min(pageIndex + columns - 1, Math.max(0, flatPages.length - 1))]
+  const deepestChapter = lastVisible?.kind === 'chapter' ? lastVisible.chapterIndex : currentChapter
+  useEffect(() => {
+    if (ready) onDeepestChapterChange?.(deepestChapter)
+  }, [ready, deepestChapter, onDeepestChapterChange])
 
   useEffect(() => {
     if (ready) onPageChange?.(pageIndex)

@@ -9,6 +9,7 @@ import { ReaderThemeToggle } from '@/features/reader/components/reader-theme-tog
 import {
   bookFromShared,
   fetchShare,
+  pingChapterReached,
   pingSharePulse,
   QUOTE_MAX,
   readSharedBookmark,
@@ -128,6 +129,12 @@ export function SharedReader() {
         author={share.meta.author}
         projectId=""
         onChapterChange={setChapterIndex}
+        onDeepestChapterChange={(index) => {
+          // The anonymous depth tick — counts only, deduped per device.
+          // Depth rather than the page under the eye: the right page of a
+          // spread counts as reached.
+          pingChapterReached(shareId, index)
+        }}
         initialPage={bookmark}
         onPageChange={(page) => writeSharedBookmark(shareId, page)}
       />

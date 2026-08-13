@@ -7,6 +7,7 @@
 
 import { resolveCoverThumbnail } from '@/features/covers/lib/resolve-cover'
 import type { BookChapter } from '@/features/reader/lib/compile-book'
+import type { PulsePing } from '@/features/reader/lib/drop-off'
 import { chapterPayload, newShareId } from '@/features/reader/lib/share-book'
 import { COVER_MAX_EDGE, coverAcceptable } from '@/features/reader/lib/share-cover'
 import { projectRepo } from '@/lib/db/repositories'
@@ -144,20 +145,17 @@ export async function deleteReaderNote(shareId: string, noteId: string): Promise
   await fs.deleteDoc(fs.doc(db, 'shares', shareId, 'comments', noteId))
 }
 
-export interface SharePulse {
-  opens: number
-  lastOpenedAt: number | null
-}
-
-/** How often the shared book has been opened, and when last. Server-read
- * for the same reason as the notes: pings arrive from outside this SDK. */
-export async function fetchSharePulse(shareId: string): Promise<SharePulse> {
+/** Every pulse ping, opens and chapter reaches alike, for the drop-off
+ * curve. Server-read for the same reason as the notes: pings arrive from
+ * outside this SDK. */
+export async function fetchPulsePings(shareId: string): Promise<PulsePing[]> {
   const { fs, db } = await deps()
   const snapshot = await fs.getDocsFromServer(fs.collection(db, 'shares', shareId, 'pulse'))
-  let last = 0
-  for (const doc of snapshot.docs) {
-    const at = Number(doc.data().at ?? 0)
-    if (at > last) last = at
-  }
-  return { opens: snapshot.size, lastOpenedAt: last > 0 ? last : null }
+  return snapshot.docs.map((doc) => {
+    const data = doc.data()
+    return {
+      at: Number(data.at ?? 0),
+      chapter: typeof data.chapter === 'number' ? data.chapter : null,
+    }
+  })
 }

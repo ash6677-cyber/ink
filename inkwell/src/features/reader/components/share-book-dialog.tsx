@@ -13,17 +13,18 @@ import {
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/components/ui/use-toast'
 import type { BookChapter } from '@/features/reader/lib/compile-book'
+import { dropOffCurve, dropOffSummary, type DropOff } from '@/features/reader/lib/drop-off'
 import {
   deleteReaderNote,
+  fetchPulsePings,
   fetchReaderNotes,
-  fetchSharePulse,
   publishShare,
   revokeShare,
   type ReaderNote,
-  type SharePulse,
 } from '@/features/reader/lib/share-actions'
 import { shareUrl } from '@/features/reader/lib/share-book'
 import { totalWordCount } from '@/features/reader/lib/compile-book'
+import { useAuthStore } from '@/stores/auth-store'
 import type { Project } from '@/types'
 
 /**
@@ -48,7 +49,7 @@ export function ShareBookDialog({
   const [working, setWorking] = useState<'publish' | 'revoke' | null>(null)
   const [copied, setCopied] = useState(false)
   const [notes, setNotes] = useState<ReaderNote[] | null>(null)
-  const [pulse, setPulse] = useState<SharePulse | null>(null)
+  const [pulse, setPulse] = useState<DropOff | null>(null)
 
   const shared = Boolean(project.shareId)
   const words = totalWordCount(book)
@@ -64,8 +65,12 @@ export function ShareBookDialog({
     setNotes(null)
     setPulse(null)
   }
+  // The fetches need the signed-in uid, and on a fresh page load the auth
+  // store can hydrate a beat after the dialog opens — without this key the
+  // first fetch threw quietly and the pulse showed nothing forever.
+  const uid = useAuthStore((s) => s.user?.uid ?? '')
   useEffect(() => {
-    if (!notesKey) return
+    if (!notesKey || !uid) return
     let cancelled = false
     fetchReaderNotes(notesKey)
       .then((fetched) => {
@@ -74,17 +79,18 @@ export function ShareBookDialog({
       .catch(() => {
         if (!cancelled) setNotes([])
       })
-    fetchSharePulse(notesKey)
-      .then((p) => {
-        if (!cancelled) setPulse(p)
+    fetchPulsePings(notesKey)
+      .then((pings) => {
+        if (!cancelled) setPulse(dropOffCurve(pings, book.length))
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error('pulse-fetch-failed', error)
         if (!cancelled) setPulse(null)
       })
     return () => {
       cancelled = true
     }
-  }, [notesKey])
+  }, [notesKey, book.length, uid])
 
   async function handleDeleteNote(noteId: string) {
     if (!project.shareId) return
@@ -168,9 +174,37 @@ export function ShareBookDialog({
             {pulse && pulse.opens > 0 && (
               <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Eye className="size-3.5" />
-                Opened {pulse.opens} {pulse.opens === 1 ? 'time' : 'times'}
+                {dropOffSummary(pulse, (i) => book[i]?.title ?? `Chapter ${i + 1}`)}
                 {pulse.lastOpenedAt && <> · last {new Date(pulse.lastOpenedAt).toLocaleDateString()}</>}
               </p>
+            )}
+
+            {/* Where readers stop: devices counted at each chapter, anonymously.
+                The most honest feedback there is — nobody had to write a word. */}
+            {pulse?.hasCurve && (
+              <div className="space-y-1" data-drop-off>
+                {book.map((chapter, index) => {
+                  const count = pulse.reached[index] ?? 0
+                  const most = Math.max(1, ...pulse.reached)
+                  return (
+                    <div key={chapter.id} className="flex items-center gap-2 text-xs">
+                      <span className="w-28 shrink-0 truncate text-muted-foreground">
+                        {chapter.title}
+                      </span>
+                      <span className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+                        <span
+                          className="block h-full rounded-full bg-primary/70"
+                          style={{ width: `${Math.round((count / most) * 100)}%` }}
+                        />
+                      </span>
+                      <span className="w-6 shrink-0 text-right tabular-nums">{count}</span>
+                    </div>
+                  )
+                })}
+                <p className="text-[11px] text-muted-foreground">
+                  How many readers' devices reached each chapter — counts only, never identities.
+                </p>
+              </div>
             )}
           </div>
         )}

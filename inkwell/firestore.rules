@@ -42,14 +42,20 @@ service cloud.firestore {
       // nothing in it can be edited after the fact. Strict shape and size
       // validation on the way in — this is the one door anonymous strangers
       // can write through, so it admits exactly one kind of parcel.
-      // The pulse: one tiny timestamp per visit, dropped anonymously when a
-      // reader opens the book. Tells the writer "it was opened, and when" —
-      // never who. Same one-way door as the notes: create-only for the
-      // world, readable and sweepable only by the owner.
+      // The pulse: tiny anonymous pings. Two shapes only — an open
+      // (`{at}`) per visit, and a reach (`{at, chapter}`) the first time a
+      // device gets to a chapter, which together draw the writer's
+      // drop-off curve. Counts, never identities. Same one-way door as
+      // the notes: create-only for the world, readable and sweepable only
+      // by the owner.
       match /pulse/{pulseId} {
         allow create: if exists(/databases/$(database)/documents/shares/$(shareId))
-          && request.resource.data.keys().hasOnly(['at'])
-          && request.resource.data.at is int;
+          && request.resource.data.keys().hasOnly(['at', 'chapter'])
+          && request.resource.data.at is int
+          && (!request.resource.data.keys().hasAny(['chapter'])
+            || (request.resource.data.chapter is int
+              && request.resource.data.chapter >= 0
+              && request.resource.data.chapter < 1000));
         allow read, delete: if request.auth != null
           && get(/databases/$(database)/documents/shares/$(shareId)).data.ownerUid
             == request.auth.uid;

@@ -208,6 +208,46 @@ export function pingSharePulse(shareId: string): void {
   }).catch(() => undefined)
 }
 
+/**
+ * Reports how deep this device has read: one anonymous ping per chapter
+ * the first time it's reached, `{at, chapter}` and nothing else — counts,
+ * never identities. The device remembers its own high-water mark locally,
+ * so paging back and forth never double-counts, and every chapter passed
+ * on the way to a jump gets its tick so the drop-off curve stays honest.
+ * Fire-and-forget, same as the open ping.
+ */
+export function pingChapterReached(shareId: string, chapterIndex: number): void {
+  if (!/^[a-z0-9]{10,40}$/.test(shareId)) return
+  const chapter = Math.max(0, Math.floor(chapterIndex))
+  const key = `inkwell-share-reach-${shareId}`
+  let previous = -1
+  try {
+    previous = Number(localStorage.getItem(key) ?? -1)
+  } catch {
+    // Storage blocked: over-counting beats losing the curve entirely.
+  }
+  if (chapter <= previous) return
+  try {
+    localStorage.setItem(key, String(chapter))
+  } catch {
+    /* same trade as above */
+  }
+  // Never more than 50 pings in one leap, in case of a huge book.
+  const from = Math.max(previous + 1, chapter - 49)
+  for (let c = from; c <= chapter; c++) {
+    void fetch(`${restBase()}/shares/${shareId}/pulse`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fields: {
+          at: { integerValue: String(Date.now()) },
+          chapter: { integerValue: String(c) },
+        },
+      }),
+    }).catch(() => undefined)
+  }
+}
+
 /** Where this device last left off in a shared book — remembered locally,
  * never sent anywhere. */
 export function readSharedBookmark(shareId: string): number {
