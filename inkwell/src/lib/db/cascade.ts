@@ -21,6 +21,7 @@ export interface CascadeSource {
   sessionLogs: { id: string; projectId: string }[]
   revisionPasses: { id: string; projectId: string }[]
   promises: { id: string; projectId: string; setupSceneId: string }[]
+  worldMaps: { id: string; projectId: string }[]
   codexEntries: { id: string; projectId: string | null }[]
   characterCards: { id: string; projectId: string }[]
   cardChats: { id: string; projectId: string }[]
@@ -33,7 +34,7 @@ export type CascadePlan = Partial<Record<keyof CascadeSource, string[]>>
 export function emptyCascadeSource(): CascadeSource {
   return {
     chapters: [], scenes: [], snapshots: [], covers: [], goals: [],
-    sessionLogs: [], revisionPasses: [], promises: [], codexEntries: [], characterCards: [], cardChats: [], lorebooks: [],
+    sessionLogs: [], revisionPasses: [], promises: [], worldMaps: [], codexEntries: [], characterCards: [], cardChats: [], lorebooks: [],
   }
 }
 
@@ -53,6 +54,7 @@ export function cascadeForProject(projectId: string, source: CascadeSource): Cas
     sessionLogs: ids(source.sessionLogs, (s) => s.projectId === projectId),
     revisionPasses: ids(source.revisionPasses, (s) => s.projectId === projectId),
     promises: ids(source.promises, (p) => p.projectId === projectId),
+    worldMaps: ids(source.worldMaps, (m) => m.projectId === projectId),
     // Likewise a codex entry scoped to a series rather than a project: the
     // other books in the series still need it.
     codexEntries: ids(source.codexEntries, (e) => e.projectId === projectId),

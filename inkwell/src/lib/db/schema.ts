@@ -21,6 +21,7 @@ import type {
   Snapshot,
   StoryPromise,
   Theme,
+  WorldMap,
 } from '@/types'
 
 import { syncEngine } from '@/lib/sync/sync-engine'
@@ -53,6 +54,7 @@ export class InkwellDB extends Dexie {
   themes!: EntityTable<Theme, 'id'>
   revisionPasses!: EntityTable<RevisionPass, 'id'>
   promises!: EntityTable<StoryPromise, 'id'>
+  worldMaps!: EntityTable<WorldMap, 'id'>
 
   constructor(name = 'inkwell') {
     super(name)
@@ -97,6 +99,11 @@ export class InkwellDB extends Dexie {
     this.version(5).stores({
       promises: 'id, projectId, setupSceneId, updatedAt',
     })
+
+    // The writer's own maps, pinned to Almanac entries.
+    this.version(6).stores({
+      worldMaps: 'id, projectId, updatedAt',
+    })
   }
 }
 
@@ -121,6 +128,7 @@ interface DbTables {
   themes: TrashableTable<Theme>
   revisionPasses: TrashableTable<RevisionPass>
   promises: TrashableTable<StoryPromise>
+  worldMaps: TrashableTable<WorldMap>
 }
 
 /** The raw tables, before soft-delete or sync wrapping. */

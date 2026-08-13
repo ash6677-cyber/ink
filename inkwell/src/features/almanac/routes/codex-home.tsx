@@ -1,4 +1,4 @@
-import { BookOpen, BookText, Download, Library, List, Plus, Search, Share2, Upload } from 'lucide-react'
+import { BookOpen, BookText, Download, Library, List, Map as MapIcon, Plus, Search, Share2, Upload } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 
@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/components/ui/use-toast'
 import { EntryCard } from '@/features/almanac/components/entry-card'
 import { EntryFormDialog } from '@/features/almanac/components/entry-form-dialog'
+import { AtlasView } from '@/features/almanac/components/atlas-view'
 import { RelationshipMap } from '@/features/almanac/components/relationship-map'
 import { AlmanacSurvey } from '@/features/almanac/components/almanac-survey'
 import { exportAlmanac, importAlmanac } from '@/features/almanac/lib/run-almanac-io'
@@ -113,7 +114,7 @@ export function CodexHome() {
   const [query, setQuery] = useState('')
   const [typeFilter, setTypeFilter] = useState<CodexEntryType | 'all'>('all')
   const [formOpen, setFormOpen] = useState(false)
-  const [view, setView] = useState<'list' | 'map'>('list')
+  const [view, setView] = useState<'list' | 'map' | 'atlas'>('list')
 
   useEffect(() => {
     if (projectId) loadProject(projectId)
@@ -213,7 +214,7 @@ export function CodexHome() {
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search entries…"
               className="h-8 pl-8 text-sm"
-              disabled={view === 'map'}
+              disabled={view !== 'list'}
             />
           </div>
           <div className="flex items-center gap-1 sm:ml-auto">
@@ -232,6 +233,14 @@ export function CodexHome() {
               onClick={() => setView('map')}
             >
               <Share2 className="size-3.5" /> Map
+            </Button>
+            <Button
+              size="sm"
+              variant={view === 'atlas' ? 'secondary' : 'ghost'}
+              className="h-8"
+              onClick={() => setView('atlas')}
+            >
+              <MapIcon className="size-3.5" /> Atlas
             </Button>
           </div>
         </div>
@@ -279,6 +288,8 @@ export function CodexHome() {
           </div>
         ) : view === 'map' ? (
           <RelationshipMap entries={entries} projectId={projectId ?? ''} />
+        ) : view === 'atlas' ? (
+          <AtlasView projectId={projectId} entries={entries} />
         ) : filtered.length === 0 ? (
           <EmptyState
             icon={Search}

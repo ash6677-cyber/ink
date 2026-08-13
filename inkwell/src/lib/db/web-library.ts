@@ -52,6 +52,7 @@ export const BACKED_UP_TABLES = [
   'themes',
   'revisionPasses',
   'promises',
+  'worldMaps',
 ] as const
 
 /**

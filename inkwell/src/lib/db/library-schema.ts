@@ -18,6 +18,7 @@ import type {
   Snapshot,
   StoryPromise,
   Theme,
+  WorldMap,
 } from '@/types'
 
 export const CURRENT_SCHEMA_VERSION = 2
@@ -57,6 +58,7 @@ export interface LibraryDocument {
   themes: Theme[]
   revisionPasses: RevisionPass[]
   promises: StoryPromise[]
+  worldMaps: WorldMap[]
 }
 
 const ARRAY_KEYS = [
@@ -80,6 +82,7 @@ const ARRAY_KEYS = [
   'themes',
   'revisionPasses',
   'promises',
+  'worldMaps',
 ] as const
 
 export function emptyLibrary(): LibraryDocument {
